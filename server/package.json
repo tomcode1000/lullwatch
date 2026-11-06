@@ -1,0 +1,11 @@
+{
+  "name": "lullwatch-server",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22.18" },
+  "scripts": {
+    "start": "node main.ts",
+    "dev": "node --env-file=../.env --watch main.ts",
+    "test": "node --test"
+  }
+}
