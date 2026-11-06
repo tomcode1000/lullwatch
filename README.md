@@ -31,8 +31,6 @@ Her browser makes a fresh random nonce and runs these checks:
 
 If our server altered a reply, the last check fails and the app says so. The checks are in [app/src/verify.ts](app/src/verify.ts).
 
-What the proof doesn't cover yet: our server relays questions in plain text (it stores and logs nothing), and the Intel TDX quote is not yet checked against Intel's collateral in the browser.
-
 ## Safety
 
 - The AI explains; fixed rules decide. The decision logic ([app/src/engine/labour.ts](app/src/engine/labour.ts)) is plain code with tests.
