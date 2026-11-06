@@ -12,7 +12,7 @@ import { costOf, Guard } from "./guard.ts";
 import { buildRequest, type ChatInput } from "./prompt.ts";
 
 const KEY = process.env.NEARAI_API_KEY ?? "";
-const MODEL = process.env.CHAT_MODEL ?? "z-ai/glm-5.3-flash";
+const MODEL = process.env.CHAT_MODEL ?? "Qwen/Qwen3.8-27B";
 const PORT = Number(process.env.PORT ?? 8787);
 const HERE = fileURLToPath(new URL(".", import.meta.url));
 const STATIC = join(HERE, "../app/dist");
@@ -128,8 +128,9 @@ const server = createServer(async (req, res) => {
     if (url.pathname.startsWith("/api/")) return send(res, 404, { error: "not found" });
     return serveStatic(url.pathname, res);
   } catch (e) {
-    // Message only; never the request body.
-    return send(res, 502, { error: (e as Error).message });
+    // Message and network code only; never the request body.
+    const code = (e as { cause?: { code?: string } }).cause?.code;
+    return send(res, 502, { error: (e as Error).message + (code ? ` (${code})` : "") });
   }
 });
 

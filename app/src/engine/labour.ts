@@ -57,21 +57,30 @@ export function durationsSec(cs: Contraction[]): number[] {
   return cs.map((c) => (c.end - c.start) / 1000);
 }
 
-function meetsRule(prev: Contraction, c: Contraction, rule: GoRule): boolean {
+// Midwives mean "about 5 minutes apart", so a run is judged by its typical
+// (median) gap and length, not by every single pair. That way one missed tap
+// or one quick contraction doesn't restart the count, which would delay
+// leaving: the unsafe direction.
+function runMeetsRule(run: Contraction[], rule: GoRule): boolean {
+  const gaps = intervalsMin(run);
+  if (gaps.length < 2) return false;
   return (
-    (c.start - prev.start) / MIN <= rule.intervalMin &&
-    (c.end - c.start) / 1000 >= rule.durationSec
+    median(gaps)! <= rule.intervalMin &&
+    median(durationsSec(run))! >= rule.durationSec &&
+    // ...and she is still there now, not only earlier in the run.
+    median(gaps.slice(-3))! <= rule.intervalMin
   );
 }
 
-// When the current run of rule-meeting contractions began, or null if the
-// latest contraction doesn't meet the rule. One short or spaced-out
-// contraction breaks the run, which is the cautious reading.
+// When the current run that meets the rule began, or null if it isn't met
+// now. A gap over twice the rule's interval is a pause, which ends a run.
 export function streakStart(cs: Contraction[], rule: GoRule): number | null {
-  let i = cs.length - 1;
-  if (i < 1 || !meetsRule(cs[i - 1], cs[i], rule)) return null;
-  while (i >= 2 && meetsRule(cs[i - 2], cs[i - 1], rule)) i--;
-  return cs[i - 1].start;
+  let start: number | null = null;
+  for (let i = cs.length - 3; i >= 0; i--) {
+    if ((cs[i + 1].start - cs[i].start) / MIN > rule.intervalMin * 2) break;
+    if (runMeetsRule(cs.slice(i), rule)) start = cs[i].start;
+  }
+  return start;
 }
 
 // Least-squares line through (start time, gap to next) for recent

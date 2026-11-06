@@ -9,6 +9,22 @@ function auth(key: string) {
   return { Authorization: `Bearer ${key}` };
 }
 
+// Retry only when the connection never opened, so a paid request is never
+// sent twice.
+const NOT_SENT = new Set(["UND_ERR_CONNECT_TIMEOUT", "ECONNREFUSED", "ENOTFOUND", "EAI_AGAIN"]);
+
+async function fetchRetry(url: string, init?: RequestInit, tries = 3): Promise<Response> {
+  for (let i = 1; ; i++) {
+    try {
+      return await fetch(url, init);
+    } catch (e) {
+      const code = (e as { cause?: { code?: string } }).cause?.code ?? "";
+      if (i >= tries || !NOT_SENT.has(code)) throw e;
+      await new Promise((r) => setTimeout(r, 500 * i));
+    }
+  }
+}
+
 async function fail(res: Response, what: string): Promise<never> {
   // Status only: error bodies can echo the request, which may be private.
   throw new Error(`${what} failed: ${res.status}`);
@@ -25,7 +41,7 @@ export type Attestation = {
 // NVIDIA's verdict on each GPU payload. Free to call.
 export async function attest(key: string, model: string, nonce: string): Promise<Attestation> {
   const q = new URLSearchParams({ model, nonce, signing_algo: "ecdsa" });
-  const res = await fetch(`${NEARAI}/v1/attestation/report?${q}`, { headers: { accept: "application/json", ...auth(key) } });
+  const res = await fetchRetry(`${NEARAI}/v1/attestation/report?${q}`, { headers: { accept: "application/json", ...auth(key) } });
   if (!res.ok) await fail(res, "Attestation");
   const report = (await res.json()) as {
     gateway_attestation?: { signing_address: string; request_nonce: string };
@@ -36,7 +52,7 @@ export async function attest(key: string, model: string, nonce: string): Promise
     (report.model_attestations ?? []).map(async (m) => {
       let nras: unknown = null;
       if (m.nvidia_payload) {
-        const r = await fetch(NRAS, {
+        const r = await fetchRetry(NRAS, {
           method: "POST",
           headers: { accept: "application/json", "content-type": "application/json" },
           body: typeof m.nvidia_payload === "string" ? m.nvidia_payload : JSON.stringify(m.nvidia_payload),
@@ -68,7 +84,9 @@ export async function transcribe(key: string, audio: Buffer, mime: string, model
   form.append("file", new Blob([new Uint8Array(audio)], { type: mime }), `clip.${ext}`);
   form.append("model", model);
   form.append("response_format", "json");
-  const res = await fetch(`${NEARAI}/v1/audio/transcriptions`, { method: "POST", headers: auth(key), body: form });
+  // The app is in English; this also stops noise turning into other languages.
+  form.append("language", "en");
+  const res = await fetchRetry(`${NEARAI}/v1/audio/transcriptions`, { method: "POST", headers: auth(key), body: form });
   if (!res.ok) await fail(res, "Transcription");
   const body = (await res.json()) as { text?: string };
   return (body.text ?? "").trim();
@@ -84,7 +102,7 @@ export type Signed = {
 
 // One chat completion plus the TEE's signature over the exact request and response.
 export async function chat(key: string, requestBody: string, model: string): Promise<Signed> {
-  const res = await fetch(`${NEARAI}/v1/chat/completions`, {
+  const res = await fetchRetry(`${NEARAI}/v1/chat/completions`, {
     method: "POST",
     headers: {
       accept: "application/json",
@@ -103,7 +121,7 @@ export async function chat(key: string, requestBody: string, model: string): Pro
   const url = `${NEARAI}/v1/signature/${encodeURIComponent(parsed.id)}?model=${encodeURIComponent(model)}&signing_algo=ecdsa`;
   let signature: Signed["signature"] | null = null;
   for (let i = 0; i < 5 && !signature; i++) {
-    const s = await fetch(url, { headers: { accept: "application/json", ...auth(key) } });
+    const s = await fetchRetry(url, { headers: { accept: "application/json", ...auth(key) } });
     if (s.ok) {
       const body = (await s.json()) as Signed["signature"] & { error_code?: string };
       if (!body.error_code) signature = body;
