@@ -61,6 +61,19 @@ export async function attest(key: string, model: string, nonce: string): Promise
   };
 }
 
+// Speech to text with Whisper inside the TEE. Returns only the words.
+export async function transcribe(key: string, audio: Buffer, mime: string, model: string): Promise<string> {
+  const form = new FormData();
+  const ext = mime.includes("mp4") ? "m4a" : mime.includes("ogg") ? "ogg" : "webm";
+  form.append("file", new Blob([new Uint8Array(audio)], { type: mime }), `clip.${ext}`);
+  form.append("model", model);
+  form.append("response_format", "json");
+  const res = await fetch(`${NEARAI}/v1/audio/transcriptions`, { method: "POST", headers: auth(key), body: form });
+  if (!res.ok) await fail(res, "Transcription");
+  const body = (await res.json()) as { text?: string };
+  return (body.text ?? "").trim();
+}
+
 export type Signed = {
   model: string;
   requestBody: string; // the exact bytes sent; the browser hashes these

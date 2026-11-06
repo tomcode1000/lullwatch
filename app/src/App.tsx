@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   advise,
   FIRST_BABY_RULE,
@@ -11,7 +11,8 @@ import {
 } from "./engine/labour";
 import { defaultProfile, emptyState, load, save, wipe, type Profile, type State } from "./store";
 import { sampleLabour } from "./sample";
-import { Ask, timerContext } from "./Ask";
+import { Ask, timerContext, type AskFn } from "./Ask";
+import { Voice } from "./Voice";
 
 function useNow(ms = 1000): number {
   const [now, setNow] = useState(() => Date.now());
@@ -83,14 +84,17 @@ function Timer({
     [state.contractions, state.flags, profile, tick],
   );
 
-  const toggle = () =>
+  const begin = () => setState((s) => (s.running === null ? { ...s, running: Date.now() } : s));
+  const end = () =>
     setState((s) => {
+      if (s.running === null) return s;
       const t = Date.now();
-      if (s.running === null) return { ...s, running: t };
-      // A tap within 5 seconds is a mistake, not a contraction.
+      // Under 5 seconds is a mistake, not a contraction.
       if (t - s.running < 5000) return { ...s, running: null };
       return { ...s, running: null, contractions: [...s.contractions, { start: s.running, end: t }] };
     });
+  const toggle = () => (state.running === null ? begin() : end());
+  const askRef = useRef<AskFn | null>(null);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -147,9 +151,17 @@ function Timer({
         )}
       </button>
 
+      <Voice
+        onHeard={(h) => {
+          if (h.kind === "start") begin();
+          else if (h.kind === "stop") end();
+          else if (h.kind === "question") askRef.current?.(h.text, true);
+        }}
+      />
+
       <Flags flags={state.flags} onChange={(flags) => setState((s) => ({ ...s, flags }))} />
 
-      <Ask context={() => timerContext(advice, profile.rule, profile.firstBaby, Date.now())} />
+      <Ask askRef={askRef} context={() => timerContext(advice, profile.rule, profile.firstBaby, Date.now())} />
 
       <Log
         contractions={state.contractions}

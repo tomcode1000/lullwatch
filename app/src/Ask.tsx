@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, type RefObject } from "react";
+import { speakLocal } from "./Voice";
 import type { Advice, GoRule } from "./engine/labour";
 import { checkAttestation, checkReply, newNonce, replyText, type Attestation, type Check, type Signed } from "./verify";
 
@@ -33,7 +34,9 @@ async function getAttestation(): Promise<{ attestation: Attestation; checks: Che
   return { attestation, checks: checkAttestation(attestation, nonce) };
 }
 
-export function Ask({ context }: { context: () => string }) {
+export type AskFn = (question: string, aloud?: boolean) => void;
+
+export function Ask({ context, askRef }: { context: () => string; askRef?: RefObject<AskFn | null> }) {
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
@@ -47,7 +50,7 @@ export function Ask({ context }: { context: () => string }) {
     return p;
   };
 
-  const ask = async (question: string) => {
+  const ask = async (question: string, aloud = false) => {
     if (!question.trim() || busy) return;
     const next: Msg[] = [...msgs, { role: "user", content: question.trim() }];
     setMsgs(next);
@@ -60,13 +63,19 @@ export function Ask({ context }: { context: () => string }) {
         context: context(),
         messages: next.map(({ role, content }) => ({ role, content })),
       });
-      setMsgs([...next, { role: "assistant", content: replyText(signed), checks: checkReply(signed, p.attestation) }]);
+      const reply = replyText(signed);
+      const checks = checkReply(signed, p.attestation);
+      setMsgs([...next, { role: "assistant", content: reply, checks }]);
+      // Only read aloud what passed verification.
+      if (aloud && checks.every((c) => c.pass)) speakLocal(reply);
     } catch (e) {
       setError((e as Error).message);
     } finally {
       setBusy(false);
     }
   };
+
+  if (askRef) askRef.current = (q, aloud) => void ask(q, aloud);
 
   return (
     <section className="ask">

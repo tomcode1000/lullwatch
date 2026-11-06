@@ -71,11 +71,18 @@ export class Guard {
     if (this.ledger.day !== d) this.ledger = { ...this.ledger, day: d, dayUsd: 0 };
   }
 
-  // Call before a paid request. Returns a reason to refuse, or null to go ahead.
-  check(visitor: string): string | null {
+  // The dollar caps only, for callers that rate-limit separately.
+  budgetReason(): string | null {
     this.rollDay();
     if (this.ledger.totalUsd >= this.opts.totalCapUsd) return "The AI is switched off: the credit budget is used up.";
     if (this.ledger.dayUsd >= this.opts.dailyCapUsd) return "The AI has reached today's limit. The timer still works.";
+    return null;
+  }
+
+  // Call before a paid request. Returns a reason to refuse, or null to go ahead.
+  check(visitor: string): string | null {
+    const budget = this.budgetReason();
+    if (budget) return budget;
     const hourAgo = this.now() - 3_600_000;
     const recent = (this.hits.get(visitor) ?? []).filter((t) => t > hourAgo);
     if (recent.length >= this.opts.perVisitorPerHour) return "Too many questions this hour. The timer still works.";

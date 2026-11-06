@@ -125,3 +125,13 @@ input { width: 100%; min-width: 0; background: var(--surface); border: 1px solid
 .proof ul { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
 .mono { font-family: ui-monospace, monospace; word-break: break-all; }
 .privacy { border-top: 1px solid var(--line); padding-top: 10px; }
+
+.voice { display: flex; flex-direction: column; gap: 6px; }
+.voice p { margin: 0; }
+.voice-btn { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; font-weight: 600; }
+.voice-btn .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--muted); flex: none; }
+.voice-btn.listening .dot { background: var(--brand); }
+.voice-btn.hearing .dot { background: var(--on); animation: pulse 0.8s ease-in-out infinite; }
+.voice-btn.sending .dot { background: var(--brand); animation: pulse 1.2s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: 0.3; } }
+@media (prefers-reduced-motion: reduce) { .voice-btn .dot { animation: none !important; } }

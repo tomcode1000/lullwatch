@@ -11,6 +11,7 @@ In the last weeks of pregnancy, it's hard to tell when contractions mean it's ti
 ## What it does
 
 - **Timer:** tap when a contraction starts and stops (or press the space bar).
+- **Hands-free voice:** switch voice on and say "now" when a contraction starts and "stop" when it ends, or just ask a question. Speech is transcribed by Whisper inside NEAR AI Cloud's TEE; silence is never sent. Verified replies are read aloud with an on-device voice only.
 - **"Leave by 4:36 PM":** fixed rules check whether her midwife's rule (5-1-1 by default) has held long enough. If not yet, a trend line forecasts when it will. Lullwatch subtracts her journey time to give a leave-by time, and says "start packing" two hours before.
 - **Warning signs come first:** waters breaking, bleeding, the baby moving less and other red flags turn the screen to "Go now", whatever the count says.
 - **Ask Lullwatch:** a short, calm AI companion that explains the numbers and helps with breathing or packing. It is never allowed to change the decision.
@@ -65,6 +66,8 @@ app/      React + Vite web app
   src/engine/labour.ts   the decision rules and forecast
   src/verify.ts          the in-browser privacy checks
   src/Ask.tsx            the AI companion
+  src/Voice.tsx          hands-free listening (pre-roll, silence detection, WAV)
+  src/commands.ts        what a spoken phrase means: start, stop or a question
 server/   Node server (no dependencies): key, limits, NEAR AI Cloud calls
 ```
 

@@ -7,7 +7,7 @@ import { createServer, type IncomingMessage, type ServerResponse } from "node:ht
 import { readFile } from "node:fs/promises";
 import { extname, join, normalize } from "node:path";
 import { fileURLToPath } from "node:url";
-import { attest, chat } from "./nearai.ts";
+import { attest, chat, transcribe } from "./nearai.ts";
 import { costOf, Guard } from "./guard.ts";
 import { buildRequest, type ChatInput } from "./prompt.ts";
 
@@ -25,6 +25,24 @@ const spend = new Guard({
 });
 // Attestation is free, but NEAR's and NVIDIA's services deserve limits too.
 const attests = new Guard({ dailyCapUsd: Infinity, totalCapUsd: Infinity, perVisitorPerHour: 30 });
+// Voice clips: "now" and "stop" twice a contraction, plus questions. Dollars
+// still count against the main budget.
+const voices = new Guard({ dailyCapUsd: Infinity, totalCapUsd: Infinity, perVisitorPerHour: 90 });
+const VOICE_MODEL = "openai/whisper-large-v3";
+// Whisper reports no usage; count each clip cautiously.
+const VOICE_CLIP_USD = 0.0005;
+const VOICE_MAX_BYTES = 1_000_000; // about a minute of compressed speech
+
+async function readBody(req: IncomingMessage, limit: number): Promise<Buffer> {
+  let size = 0;
+  const chunks: Buffer[] = [];
+  for await (const c of req) {
+    size += c.length;
+    if (size > limit) throw new Error("too large");
+    chunks.push(c as Buffer);
+  }
+  return Buffer.concat(chunks);
+}
 
 function visitor(req: IncomingMessage): string {
   const fwd = req.headers["x-forwarded-for"];
@@ -37,14 +55,7 @@ function send(res: ServerResponse, status: number, body: unknown) {
 }
 
 async function readJson(req: IncomingMessage, limit = 32_000): Promise<unknown> {
-  let size = 0;
-  const chunks: Buffer[] = [];
-  for await (const c of req) {
-    size += c.length;
-    if (size > limit) throw new Error("too large");
-    chunks.push(c as Buffer);
-  }
-  return JSON.parse(Buffer.concat(chunks).toString("utf8"));
+  return JSON.parse((await readBody(req, limit)).toString("utf8"));
 }
 
 const TYPES: Record<string, string> = {
@@ -99,6 +110,19 @@ const server = createServer(async (req, res) => {
       const signed = await chat(KEY, requestBody, MODEL);
       spend.record(costOf(MODEL, signed.usage.prompt_tokens, signed.usage.completion_tokens));
       return send(res, 200, signed);
+    }
+
+    if (url.pathname === "/api/transcribe" && req.method === "POST") {
+      if (!KEY) return send(res, 503, { error: "The AI isn't set up on this server." });
+      const mime = String(req.headers["content-type"] ?? "");
+      if (!/^audio\/(webm|ogg|mp4|mpeg|wav)/.test(mime)) return send(res, 415, { error: "send audio" });
+      const refused = spend.budgetReason() ?? voices.check(visitor(req));
+      if (refused) return send(res, 429, { error: refused });
+      const audio = await readBody(req, VOICE_MAX_BYTES);
+      if (audio.length < 1000) return send(res, 200, { text: "" }); // too short to be speech
+      const text = await transcribe(KEY, audio, mime.split(";")[0], VOICE_MODEL);
+      spend.record(VOICE_CLIP_USD);
+      return send(res, 200, { text });
     }
 
     if (url.pathname.startsWith("/api/")) return send(res, 404, { error: "not found" });
