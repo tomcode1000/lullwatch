@@ -10,9 +10,10 @@ import {
   type RedFlag,
 } from "./engine/labour";
 import { defaultProfile, emptyState, load, save, wipe, type Profile, type State } from "./store";
-import { sampleLabour } from "./sample";
+import { sampleLabour, sampleProfile } from "./sample";
 import { Ask, timerContext, type AskFn } from "./Ask";
 import { Voice } from "./Voice";
+import { partnerMessage, smsLink, telLink } from "./contact";
 
 function useNow(ms = 1000): number {
   const [now, setNow] = useState(() => Date.now());
@@ -37,7 +38,7 @@ export default function App() {
   // ?sample opens straight into the fictional labour, for judges and demos.
   const [state, setState] = useState<State>(() =>
     new URLSearchParams(location.search).has("sample")
-      ? { ...emptyState, profile: defaultProfile(true), contractions: sampleLabour(Date.now()), sample: true }
+      ? { ...emptyState, profile: sampleProfile(), contractions: sampleLabour(Date.now()), sample: true }
       : load(),
   );
   const [editing, setEditing] = useState(false);
@@ -54,7 +55,7 @@ export default function App() {
           setEditing(false);
         }}
         onSample={() => {
-          setState({ ...emptyState, profile: defaultProfile(true), contractions: sampleLabour(Date.now()), sample: true });
+          setState({ ...emptyState, profile: sampleProfile(), contractions: sampleLabour(Date.now()), sample: true });
           setEditing(false);
         }}
       />
@@ -133,7 +134,7 @@ function Timer({
         </p>
       )}
 
-      <AdviceCard advice={advice} now={now} hospital={profile.hospital} />
+      <AdviceCard advice={advice} now={now} profile={profile} />
 
       <button className={`big ${state.running !== null ? "on" : ""}`} onClick={toggle}>
         {state.running !== null ? (
@@ -191,8 +192,9 @@ const HEADLINE: Record<Advice["stage"], string> = {
   "go-now": "Go now",
 };
 
-function AdviceCard({ advice, now, hospital }: { advice: Advice; now: number; hospital: string }) {
-  const where = hospital.trim() || "the hospital";
+function AdviceCard({ advice, now, profile }: { advice: Advice; now: number; profile: Profile }) {
+  const where = profile.hospital.trim() || "the hospital";
+  const message = partnerMessage(advice, profile.hospital, now);
   return (
     <section className={`advice ${advice.stage}`} aria-live="polite">
       <h1>{HEADLINE[advice.stage]}</h1>
@@ -211,6 +213,20 @@ function AdviceCard({ advice, now, hospital }: { advice: Advice; now: number; ho
           )}
         </p>
       ) : null}
+      {(message || advice.stage !== "waiting") && (profile.partnerPhone || profile.midwifePhone) && (
+        <div className="actions">
+          {message && profile.partnerPhone && (
+            <a className="action" href={smsLink(profile.partnerPhone, message)}>
+              Text {profile.partnerName?.trim() || "my partner"}
+            </a>
+          )}
+          {advice.stage !== "waiting" && profile.midwifePhone && (
+            <a className={`action ${advice.stage === "go-now" ? "urgent" : ""}`} href={telLink(profile.midwifePhone)}>
+              Call midwife
+            </a>
+          )}
+        </div>
+      )}
       <dl className="stats">
         <div>
           <dt>Apart</dt>
@@ -366,6 +382,31 @@ function Setup({
           onChange={(e) => setP({ ...p, travelMin: num(e.target.value, p.travelMin) })}
         />
       </label>
+
+      <fieldset>
+        <legend>Who should know when it's time?</legend>
+        <p className="muted small">
+          Optional. When it's time, Lullwatch writes the text and your own phone sends it. These numbers stay on this
+          phone.
+        </p>
+        <label>
+          Partner's name
+          <input value={p.partnerName ?? ""} placeholder="e.g. Sam" onChange={(e) => setP({ ...p, partnerName: e.target.value })} />
+        </label>
+        <label>
+          Partner's phone
+          <input
+            type="tel"
+            value={p.partnerPhone ?? ""}
+            placeholder="+44 7700 900123"
+            onChange={(e) => setP({ ...p, partnerPhone: e.target.value })}
+          />
+        </label>
+        <label>
+          Midwife or maternity unit phone
+          <input type="tel" value={p.midwifePhone ?? ""} onChange={(e) => setP({ ...p, midwifePhone: e.target.value })} />
+        </label>
+      </fieldset>
 
       <fieldset>
         <legend>When did your midwife say to come in?</legend>

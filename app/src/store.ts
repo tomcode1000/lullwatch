@@ -7,6 +7,9 @@ export type Profile = {
   travelMin: number;
   hospital: string;
   rule: GoRule; // what her midwife told her; defaults follow firstBaby
+  partnerName?: string;
+  partnerPhone?: string; // texted from her own phone, never from our server
+  midwifePhone?: string;
 };
 
 export type State = {

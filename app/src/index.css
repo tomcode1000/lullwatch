@@ -135,3 +135,7 @@ input { width: 100%; min-width: 0; background: var(--surface); border: 1px solid
 .voice-btn.sending .dot { background: var(--brand); animation: pulse 1.2s ease-in-out infinite; }
 @keyframes pulse { 50% { opacity: 0.3; } }
 @media (prefers-reduced-motion: reduce) { .voice-btn .dot { animation: none !important; } }
+
+.actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 14px; }
+.action { flex: 1 1 140px; text-align: center; text-decoration: none; border-radius: 12px; padding: 12px; font-weight: 700; background: var(--brand); color: var(--brand-ink); }
+.action.urgent { background: var(--alarm); color: #fff; }

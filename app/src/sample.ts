@@ -3,6 +3,7 @@
 // three hours, ending a few minutes before "now".
 
 import type { Contraction } from "./engine/labour";
+import { defaultProfile, type Profile } from "./store";
 
 const MIN = 60_000;
 
@@ -17,4 +18,16 @@ export function sampleLabour(now: number): Contraction[] {
     if (i < gaps.length) t += gaps[i] * MIN;
   }
   return out;
+}
+
+// A fictional profile to go with it. The numbers are from Ofcom's ranges
+// reserved for drama, so they reach no one.
+export function sampleProfile(): Profile {
+  return {
+    ...defaultProfile(true),
+    hospital: "St Mary's",
+    partnerName: "Sam",
+    partnerPhone: "+44 7700 900123",
+    midwifePhone: "+44 20 7946 0000",
+  };
 }

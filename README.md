@@ -13,6 +13,7 @@ In the last weeks of pregnancy, it's hard to tell when contractions mean it's ti
 - **Timer:** tap when a contraction starts and stops (or press the space bar).
 - **Hands-free voice:** switch voice on and say "now" when a contraction starts and "stop" when it ends, or just ask a question. Speech is transcribed by Whisper inside NEAR AI Cloud's TEE; silence is never sent. Verified replies are read aloud with an on-device voice only.
 - **"Leave by 4:36 PM":** fixed rules check whether her midwife's rule (5-1-1 by default) has held long enough. If not yet, a trend line forecasts when it will. Lullwatch subtracts her journey time to give a leave-by time, and says "start packing" two hours before.
+- **Tell her partner, call her midwife:** when it's time, one tap opens her own messaging app with the text written ("It's time to leave for St Mary's. Please come now."), and another calls her midwife. No SMS service or server is involved, and the text says only where and when, never her health details.
 - **Warning signs come first:** waters breaking, bleeding, the baby moving less and other red flags turn the screen to "Go now", whatever the count says.
 - **Ask Lullwatch:** a short, calm AI companion (Qwen3.8-27B on NEAR AI Cloud, thinking off) that explains the numbers and helps with breathing or packing. It is never allowed to change the decision.
 - **End-to-end encrypted:** her browser seals every message to the model's attested key (X25519 + XChaCha20-Poly1305, NEAR AI Cloud E2EE v2). Our server relays ciphertext only and refuses plain text.
