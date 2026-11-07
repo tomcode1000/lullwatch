@@ -1,0 +1,19 @@
+# One web service: the server serves the built app and the /api routes.
+# In Render: New > Blueprint > pick this repo, then paste NEARAI_API_KEY when asked.
+services:
+  - type: web
+    name: lullwatch
+    runtime: node
+    plan: free
+    buildCommand: cd app && npm ci && npm run build
+    startCommand: cd server && node main.ts
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: 22.19.0
+      - key: NEARAI_API_KEY
+        sync: false
+      - key: DAILY_CAP_USD
+        value: "0.25"
+      - key: TOTAL_CAP_USD
+        value: "8"
