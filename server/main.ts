@@ -9,7 +9,7 @@ import { extname, join, normalize } from "node:path";
 import { fileURLToPath } from "node:url";
 import { attest, chat, transcribe } from "./nearai.ts";
 import { costOf, Guard } from "./guard.ts";
-import { buildRequest, type ChatInput } from "./prompt.ts";
+import { buildRequest, type ChatInput } from "./request.ts";
 
 const KEY = process.env.NEARAI_API_KEY ?? "";
 const MODEL = process.env.CHAT_MODEL ?? "Qwen/Qwen3.8-27B";
@@ -100,14 +100,16 @@ const server = createServer(async (req, res) => {
     if (url.pathname === "/api/chat" && req.method === "POST") {
       if (!KEY) return send(res, 503, { error: "The AI isn't set up on this server." });
       let requestBody: string;
+      let input: ChatInput;
       try {
-        requestBody = buildRequest((await readJson(req)) as ChatInput, MODEL);
+        input = (await readJson(req, 128_000)) as ChatInput;
+        requestBody = buildRequest(input, MODEL);
       } catch (e) {
         return send(res, 400, { error: (e as Error).message });
       }
       const refused = spend.check(visitor(req));
       if (refused) return send(res, 429, { error: refused });
-      const signed = await chat(KEY, requestBody, MODEL);
+      const signed = await chat(KEY, requestBody, MODEL, { clientPubKey: input.clientPubKey, modelPubKey: input.modelPubKey });
       spend.record(costOf(MODEL, signed.usage.prompt_tokens, signed.usage.completion_tokens));
       return send(res, 200, signed);
     }

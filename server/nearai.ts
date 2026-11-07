@@ -34,18 +34,41 @@ export type Attestation = {
   model: string;
   nonce: string;
   gateway: { signing_address: string; request_nonce: string } | null;
-  models: { signing_address: string; request_nonce: string; nvidia_payload: string | null; nras: unknown }[];
+  models: {
+    signing_address: string;
+    signing_algo: string;
+    request_nonce: string;
+    intel_quote: string | null;
+    event_log: unknown;
+    app_compose: string | null;
+    nvidia_payload: string | null;
+    nras: unknown;
+  }[];
+};
+
+type RawModel = {
+  signing_address: string;
+  signing_algo: string;
+  request_nonce: string;
+  intel_quote?: string;
+  event_log?: unknown;
+  nvidia_payload?: string;
+  info?: { tcb_info?: string | { app_compose?: string } };
 };
 
 // Attestation for the gateway and every TEE node serving the model, with
-// NVIDIA's verdict on each GPU payload. Free to call.
+// NVIDIA's verdict on each GPU payload. Ed25519 keys, so the browser can
+// encrypt to them. Free to call. Everything here is public evidence; the
+// browser checks the Intel quote against Intel's own collateral itself.
 export async function attest(key: string, model: string, nonce: string): Promise<Attestation> {
-  const q = new URLSearchParams({ model, nonce, signing_algo: "ecdsa" });
-  const res = await fetchRetry(`${NEARAI}/v1/attestation/report?${q}`, { headers: { accept: "application/json", ...auth(key) } });
+  const q = new URLSearchParams({ model, nonce, signing_algo: "ed25519" });
+  const res = await fetchRetry(`${NEARAI}/v1/attestation/report?${q}`, {
+    headers: { accept: "application/json", "x-no-aliasing": "true", ...auth(key) },
+  });
   if (!res.ok) await fail(res, "Attestation");
   const report = (await res.json()) as {
     gateway_attestation?: { signing_address: string; request_nonce: string };
-    model_attestations?: { signing_address: string; request_nonce: string; nvidia_payload?: string }[];
+    model_attestations?: RawModel[];
   };
 
   const models = await Promise.all(
@@ -59,9 +82,14 @@ export async function attest(key: string, model: string, nonce: string): Promise
         });
         nras = r.ok ? await r.json() : null;
       }
+      const tcb = typeof m.info?.tcb_info === "string" ? JSON.parse(m.info.tcb_info) : m.info?.tcb_info;
       return {
         signing_address: m.signing_address,
+        signing_algo: m.signing_algo,
         request_nonce: m.request_nonce,
+        intel_quote: m.intel_quote ?? null,
+        event_log: m.event_log ?? null,
+        app_compose: tcb?.app_compose ?? null,
         nvidia_payload: m.nvidia_payload ?? null,
         nras,
       };
@@ -100,8 +128,12 @@ export type Signed = {
   usage: { prompt_tokens: number; completion_tokens: number };
 };
 
-// One chat completion plus the TEE's signature over the exact request and response.
-export async function chat(key: string, requestBody: string, model: string): Promise<Signed> {
+export type Keys = { clientPubKey: string; modelPubKey: string };
+
+// One end-to-end encrypted chat completion plus the TEE's signature over the
+// exact request and response. Message contents arrive already sealed to the
+// model's key by her browser; we can't read them and don't try.
+export async function chat(key: string, requestBody: string, model: string, keys: Keys): Promise<Signed> {
   const res = await fetchRetry(`${NEARAI}/v1/chat/completions`, {
     method: "POST",
     headers: {
@@ -109,6 +141,10 @@ export async function chat(key: string, requestBody: string, model: string): Pro
       "content-type": "application/json",
       "accept-encoding": "identity",
       "x-no-aliasing": "true",
+      "x-signing-algo": "ed25519",
+      "x-client-pub-key": keys.clientPubKey,
+      "x-model-pub-key": keys.modelPubKey,
+      "x-encryption-version": "2",
       ...auth(key),
     },
     body: requestBody,
@@ -118,7 +154,7 @@ export async function chat(key: string, requestBody: string, model: string): Pro
   const parsed = JSON.parse(responseText) as { id: string; usage?: Signed["usage"] };
 
   // The signature sits on the node that served the reply; another node may 404 briefly.
-  const url = `${NEARAI}/v1/signature/${encodeURIComponent(parsed.id)}?model=${encodeURIComponent(model)}&signing_algo=ecdsa`;
+  const url = `${NEARAI}/v1/signature/${encodeURIComponent(parsed.id)}?model=${encodeURIComponent(model)}&signing_algo=ed25519`;
   let signature: Signed["signature"] | null = null;
   for (let i = 0; i < 5 && !signature; i++) {
     const s = await fetchRetry(url, { headers: { accept: "application/json", ...auth(key) } });

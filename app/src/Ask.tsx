@@ -1,7 +1,8 @@
-import { useState, type RefObject } from "react";
+import { useEffect, useState, type RefObject } from "react";
 import { speakLocal } from "./Voice";
 import type { Advice, GoRule } from "./engine/labour";
-import { checkAttestation, checkReply, newNonce, replyText, type Attestation, type Check, type Signed } from "./verify";
+import { askCompanion, startSession, type Session } from "./companion";
+import { checkIntel, defaultIntelVerifier, type Check } from "./verify";
 
 type Msg = { role: "user" | "assistant"; content: string; checks?: Check[] };
 
@@ -21,19 +22,6 @@ export function timerContext(a: Advice, rule: GoRule, firstBaby: boolean, now: n
   return lines.join("\n");
 }
 
-async function post<T>(path: string, body: unknown): Promise<T> {
-  const r = await fetch(path, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
-  const data = await r.json().catch(() => ({ error: "The server didn't answer." }));
-  if (!r.ok || data.error) throw new Error(data.error ?? `Error ${r.status}`);
-  return data as T;
-}
-
-async function getAttestation(): Promise<{ attestation: Attestation; checks: Check[] }> {
-  const nonce = newNonce();
-  const attestation = await post<Attestation>("/api/attest", { nonce });
-  return { attestation, checks: checkAttestation(attestation, nonce) };
-}
-
 export type AskFn = (question: string, aloud?: boolean) => void;
 
 export function Ask({ context, askRef }: { context: () => string; askRef?: RefObject<AskFn | null> }) {
@@ -41,13 +29,20 @@ export function Ask({ context, askRef }: { context: () => string; askRef?: RefOb
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [proof, setProof] = useState<{ attestation: Attestation; checks: Check[] } | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [intel, setIntel] = useState<Check[] | null>(null);
 
-  const ensureProof = async () => {
-    if (proof) return proof;
-    const p = await getAttestation();
-    setProof(p);
-    return p;
+  // One attested session per visit: fresh proof, fresh encryption keys.
+  const ensureSession = async () => {
+    if (session) return session;
+    const s = await startSession();
+    setSession(s);
+    // Intel's check fetches Intel's collateral from her browser; it takes a few seconds.
+    defaultIntelVerifier()
+      .then((v) => checkIntel(s.attestation, s.attestation.nonce, v))
+      .then(setIntel)
+      .catch(() => setIntel([{ name: "Intel confirms the CPU enclave is genuine and up to date", pass: false }]));
+    return s;
   };
 
   const ask = async (question: string, aloud = false) => {
@@ -58,13 +53,12 @@ export function Ask({ context, askRef }: { context: () => string; askRef?: RefOb
     setBusy(true);
     setError(null);
     try {
-      const p = await ensureProof();
-      const signed = await post<Signed>("/api/chat", {
-        context: context(),
-        messages: next.map(({ role, content }) => ({ role, content })),
-      });
-      const reply = replyText(signed);
-      const checks = checkReply(signed, p.attestation);
+      const s = await ensureSession();
+      const { reply, checks } = await askCompanion(
+        s,
+        context(),
+        next.map(({ role, content }) => ({ role, content })),
+      );
       setMsgs([...next, { role: "assistant", content: reply, checks }]);
       // Only read aloud what passed verification.
       if (aloud && checks.every((c) => c.pass)) speakLocal(reply);
@@ -77,12 +71,18 @@ export function Ask({ context, askRef }: { context: () => string; askRef?: RefOb
 
   if (askRef) askRef.current = (q, aloud) => void ask(q, aloud);
 
+  // ?proof runs the privacy checks straight away, for judges and the demo.
+  useEffect(() => {
+    if (new URLSearchParams(location.search).has("proof")) ensureSession().catch((e) => setError((e as Error).message));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
     <section className="ask">
       <h2>Ask Lullwatch</h2>
       <p className="muted small">
-        Questions go to an AI on sealed hardware that keeps nothing. Our server passes them through without storing
-        them, and your phone checks the proof below.
+        Your questions are encrypted on this phone so only the AI inside sealed hardware can read them. Our server
+        relays scrambled text, and your phone checks the proof below.
       </p>
 
       {msgs.length === 0 && (
@@ -120,10 +120,14 @@ export function Ask({ context, askRef }: { context: () => string; askRef?: RefOb
       </form>
 
       <div className="privacy">
-        {proof ? (
-          <Proof checks={proof.checks} label="Sealed hardware verified" open />
+        {session ? (
+          <>
+            <Proof checks={[...session.checks, ...(intel ?? [])]} label="Sealed hardware verified" open />
+            {!intel && <p className="muted small">Checking with Intel…</p>}
+            <p className="muted small">✓ Encrypted to the sealed AI's key</p>
+          </>
         ) : (
-          <button className="ghost" onClick={() => ensureProof().catch((e) => setError((e as Error).message))}>
+          <button className="ghost" onClick={() => ensureSession().catch((e) => setError((e as Error).message))}>
             Check privacy proof
           </button>
         )}
