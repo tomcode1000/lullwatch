@@ -11,9 +11,10 @@ import {
 } from "./engine/labour";
 import { defaultProfile, emptyState, load, save, wipe, type Profile, type State } from "./store";
 import { sampleLabour, sampleProfile } from "./sample";
-import { Ask, timerContext, type AskFn } from "./Ask";
+import { Ask, ProofView, timerContext, usePrivacy, type AskFn, type Privacy } from "./Ask";
 import { Voice } from "./Voice";
 import { partnerMessage, smsLink, telLink } from "./contact";
+import { Icon } from "./Icon";
 
 function useNow(ms = 1000): number {
   const [now, setNow] = useState(() => Date.now());
@@ -34,10 +35,12 @@ function span(ms: number): string {
   return `${Math.floor(m / 60)} h ${m % 60} min`;
 }
 
+const params = new URLSearchParams(location.search);
+
 export default function App() {
   // ?sample opens straight into the fictional labour, for judges and demos.
   const [state, setState] = useState<State>(() =>
-    new URLSearchParams(location.search).has("sample")
+    params.has("sample")
       ? { ...emptyState, profile: sampleProfile(), contractions: sampleLabour(Date.now()), sample: true }
       : load(),
   );
@@ -50,6 +53,7 @@ export default function App() {
     return (
       <Setup
         initial={state.profile}
+        onCancel={state.profile ? () => setEditing(false) : undefined}
         onDone={(profile) => {
           setState((s) => ({ ...s, profile }));
           setEditing(false);
@@ -58,14 +62,23 @@ export default function App() {
           setState({ ...emptyState, profile: sampleProfile(), contractions: sampleLabour(Date.now()), sample: true });
           setEditing(false);
         }}
+        onWipe={() => {
+          if (confirm("Delete everything Lullwatch keeps on this phone?")) {
+            wipe();
+            setState(emptyState);
+            setEditing(false);
+          }
+        }}
       />
     );
   }
 
-  return <Timer state={state} setState={setState} now={now} onEdit={() => setEditing(true)} />;
+  return <Main state={state} setState={setState} now={now} onEdit={() => setEditing(true)} />;
 }
 
-function Timer({
+type Tab = "timer" | "ask" | "proof" | "history";
+
+function Main({
   state,
   setState,
   now,
@@ -77,6 +90,17 @@ function Timer({
   onEdit: () => void;
 }) {
   const profile = state.profile!;
+  // ?proof opens the privacy proof and runs it straight away, for judges and the demo.
+  const [tab, setTab] = useState<Tab>(params.has("proof") ? "proof" : "timer");
+  const [sheet, setSheet] = useState(false);
+  const privacy = usePrivacy();
+  const askRef = useRef<AskFn | null>(null);
+
+  const { ensure } = privacy;
+  useEffect(() => {
+    if (params.has("proof")) ensure().catch(() => {});
+  }, [ensure]);
+
   // Re-advise every 15 s, not every tick: the result only moves by minutes.
   const tick = Math.floor(now / 15_000);
   const advice = useMemo(
@@ -95,11 +119,10 @@ function Timer({
       return { ...s, running: null, contractions: [...s.contractions, { start: s.running, end: t }] };
     });
   const toggle = () => (state.running === null ? begin() : end());
-  const askRef = useRef<AskFn | null>(null);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.code === "Space" && (e.target as HTMLElement).tagName !== "INPUT") {
+      if (tab === "timer" && e.code === "Space" && (e.target as HTMLElement).tagName !== "INPUT") {
         e.preventDefault();
         toggle();
       }
@@ -108,80 +131,155 @@ function Timer({
     return () => window.removeEventListener("keydown", onKey);
   });
 
-  const last = state.contractions[state.contractions.length - 1];
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [tab]);
 
   return (
-    <main className="app">
+    <div className={`shell stage-${advice.stage}`}>
       <header className="top">
         <div className="brand">
-          <img src="/favicon.svg" alt="" width={28} height={28} />
+          <Logo />
           <span>Lullwatch</span>
         </div>
-        <button className="ghost" onClick={onEdit}>
-          Settings
-        </button>
+        <div className="top-right">
+          <PrivacyPill privacy={privacy} onClick={() => setTab("proof")} />
+          <button className="icon-btn" onClick={onEdit} aria-label="Settings">
+            <Icon name="settings" />
+          </button>
+        </div>
       </header>
 
-      {state.sample && (
-        <p className="banner">
-          Sample data: a fictional labour, for trying the app.{" "}
-          <button
-            className="link"
-            onClick={() => setState((s) => ({ ...s, contractions: [], running: null, flags: [], sample: false }))}
-          >
-            Start fresh
+      <main className="app">
+        {/* Every tab stays mounted, so voice keeps listening and the chat survives switching. */}
+        <div hidden={tab !== "timer"} className="tab">
+          {state.sample && (
+            <p className="banner">
+              <span>Sample data: a fictional labour, for trying the app.</span>
+              <button
+                className="link"
+                onClick={() => setState((s) => ({ ...s, contractions: [], running: null, flags: [], sample: false }))}
+              >
+                Start fresh
+              </button>
+            </p>
+          )}
+
+          <StageCard advice={advice} now={now} profile={profile} />
+
+          <TimerButton state={state} now={now} onToggle={toggle} />
+
+          <Voice
+            onHeard={(h) => {
+              if (h.kind === "start") begin();
+              else if (h.kind === "stop") end();
+              else if (h.kind === "question") {
+                setTab("ask");
+                askRef.current?.(h.text, true);
+              }
+            }}
+          />
+
+          <button className={`wrong ${state.flags.length ? "on" : ""}`} onClick={() => setSheet(true)}>
+            <Icon name="alert" />
+            <span>{state.flags.length ? `${state.flags.length} warning sign${state.flags.length > 1 ? "s" : ""} marked` : "Something feels wrong?"}</span>
           </button>
-        </p>
+
+          {state.contractions.length > 1 && (
+            <section className="card trend" onClick={() => setTab("history")}>
+              <div className="card-head">
+                <h2>Gaps between contractions</h2>
+                <span className="muted small">{state.contractions.length} recorded ›</span>
+              </div>
+              <GapChart contractions={state.contractions} rule={profile.rule.intervalMin} />
+            </section>
+          )}
+
+          <p className="foot">
+            Lullwatch helps you decide; it does not replace your midwife or doctor. If something feels wrong, call them.
+          </p>
+        </div>
+
+        <div hidden={tab !== "ask"} className="tab">
+          <Ask
+            askRef={askRef}
+            privacy={privacy}
+            onOpenProof={() => setTab("proof")}
+            context={() => timerContext(advice, profile.rule, profile.firstBaby, Date.now())}
+          />
+        </div>
+
+        <div hidden={tab !== "proof"} className="tab">
+          <ProofView privacy={privacy} onAsk={() => setTab("ask")} />
+        </div>
+
+        <div hidden={tab !== "history"} className="tab">
+          <History
+            contractions={state.contractions}
+            rule={profile.rule.intervalMin}
+            onUndo={() => setState((s) => ({ ...s, contractions: s.contractions.slice(0, -1) }))}
+            onClear={() => {
+              if (confirm("Delete every contraction recorded on this phone?")) {
+                wipe();
+                setState((s) => ({ ...s, contractions: [], running: null, flags: [] }));
+              }
+            }}
+          />
+        </div>
+      </main>
+
+      <nav className="tabs" aria-label="Sections">
+        {(
+          [
+            ["timer", "timer", "Timer"],
+            ["ask", "chat", "Ask"],
+            ["proof", "shield", "Proof"],
+            ["history", "list", "History"],
+          ] as const
+        ).map(([id, icon, label]) => (
+          <button key={id} className={tab === id ? "on" : ""} aria-current={tab === id} onClick={() => setTab(id)}>
+            <Icon name={icon} size={22} />
+            <span>{label}</span>
+          </button>
+        ))}
+      </nav>
+
+      {sheet && (
+        <FlagsSheet
+          flags={state.flags}
+          onChange={(flags) => setState((s) => ({ ...s, flags }))}
+          onClose={() => {
+            setSheet(false);
+            // Bring "Go now" into view the moment a warning sign is marked.
+            if (state.flags.length) window.scrollTo({ top: 0, behavior: "smooth" });
+          }}
+        />
       )}
+    </div>
+  );
+}
 
-      <AdviceCard advice={advice} now={now} profile={profile} />
+function Logo() {
+  return (
+    <svg width="30" height="30" viewBox="0 0 32 32" aria-hidden>
+      <circle cx="16" cy="16" r="15" fill="var(--brand)" />
+      <path d="M6 18c3-6 5-6 7 0s4 6 7 0 4-6 6 0" fill="none" stroke="var(--brand-ink)" strokeWidth="2.5" strokeLinecap="round" />
+    </svg>
+  );
+}
 
-      <button className={`big ${state.running !== null ? "on" : ""}`} onClick={toggle}>
-        {state.running !== null ? (
-          <>
-            <span className="big-label">It stopped</span>
-            <span className="big-sub">Contraction: {span(now - state.running)}</span>
-          </>
-        ) : (
-          <>
-            <span className="big-label">Contraction started</span>
-            <span className="big-sub">
-              {last ? `Last one began ${span(now - last.start)} ago` : "Tap when one begins"}
-            </span>
-          </>
-        )}
-      </button>
-
-      <Voice
-        onHeard={(h) => {
-          if (h.kind === "start") begin();
-          else if (h.kind === "stop") end();
-          else if (h.kind === "question") askRef.current?.(h.text, true);
-        }}
-      />
-
-      <Flags flags={state.flags} onChange={(flags) => setState((s) => ({ ...s, flags }))} />
-
-      <Ask askRef={askRef} context={() => timerContext(advice, profile.rule, profile.firstBaby, Date.now())} />
-
-      <Log
-        contractions={state.contractions}
-        onUndo={() => setState((s) => ({ ...s, contractions: s.contractions.slice(0, -1) }))}
-        onClear={() => {
-          if (confirm("Delete every contraction recorded on this phone?")) {
-            wipe();
-            setState((s) => ({ ...s, contractions: [], running: null, flags: [] }));
-          }
-        }}
-      />
-
-      <footer className="foot">
-        <p>
-          Lullwatch helps you decide; it does not replace your midwife or doctor. If something feels wrong, call them.
-        </p>
-        <p>Your contractions are stored only on this phone.</p>
-      </footer>
-    </main>
+function PrivacyPill({ privacy, onClick }: { privacy: Privacy; onClick: () => void }) {
+  const text = {
+    idle: "Private AI",
+    checking: "Checking…",
+    verified: "Verified",
+    failed: "Not verified",
+  }[privacy.status];
+  return (
+    <button className={`pill ${privacy.status}`} onClick={onClick}>
+      <Icon name={privacy.status === "failed" ? "alert" : "shield"} size={16} />
+      {text}
+    </button>
   );
 }
 
@@ -192,41 +290,65 @@ const HEADLINE: Record<Advice["stage"], string> = {
   "go-now": "Go now",
 };
 
-function AdviceCard({ advice, now, profile }: { advice: Advice; now: number; profile: Profile }) {
+const EYEBROW: Record<Advice["stage"], string> = {
+  waiting: "Early labour",
+  pack: "Getting closer",
+  leave: "It's time",
+  "go-now": "Warning sign",
+};
+
+function StageCard({ advice, now, profile }: { advice: Advice; now: number; profile: Profile }) {
   const where = profile.hospital.trim() || "the hospital";
   const message = partnerMessage(advice, profile.hospital, now);
+  const steps: Advice["stage"][] = ["waiting", "pack", "leave"];
+  const at = advice.stage === "go-now" ? 3 : steps.indexOf(advice.stage);
   return (
-    <section className={`advice ${advice.stage}`} aria-live="polite">
+    <section className={`stage ${advice.stage}`} aria-live="polite">
+      <div className="stage-top">
+        <span className="eyebrow">{EYEBROW[advice.stage]}</span>
+        <ol className="steps" aria-hidden>
+          {steps.map((s, i) => (
+            <li key={s} className={i <= at ? "done" : ""} />
+          ))}
+        </ol>
+      </div>
       <h1>{HEADLINE[advice.stage]}</h1>
       <p className="reason">{advice.reason}</p>
+
       {advice.stage === "go-now" ? (
-        <p className="when">Head to {where} or call your midwife or emergency number now.</p>
-      ) : advice.leaveBy !== null ? (
-        <p className="when">
-          {advice.leaveBy <= now ? (
-            <>Leave for {where} now.</>
-          ) : (
-            <>
-              Leave for {where} by <strong>{clock(advice.leaveBy)}</strong>
-              <span className="muted"> · in {span(advice.leaveBy - now)}</span>
-            </>
-          )}
+        <p className="leave">
+          <span className="leave-label">Head to {where} or call your midwife or emergency number now.</span>
         </p>
+      ) : advice.leaveBy !== null ? (
+        advice.leaveBy <= now ? (
+          <p className="leave">
+            <span className="leave-label">Leave for {where}</span>
+            <span className="leave-time">Now</span>
+          </p>
+        ) : (
+          <p className="leave">
+            <span className="leave-label">Leave for {where} by</span>
+            <span className="leave-time">{clock(advice.leaveBy)}</span>
+            <span className="leave-in">in {span(advice.leaveBy - now)}</span>
+          </p>
+        )
       ) : null}
+
       {(message || advice.stage !== "waiting") && (profile.partnerPhone || profile.midwifePhone) && (
         <div className="actions">
-          {message && profile.partnerPhone && (
-            <a className="action" href={smsLink(profile.partnerPhone, message)}>
-              Text {profile.partnerName?.trim() || "my partner"}
-            </a>
-          )}
           {advice.stage !== "waiting" && profile.midwifePhone && (
             <a className={`action ${advice.stage === "go-now" ? "urgent" : ""}`} href={telLink(profile.midwifePhone)}>
-              Call midwife
+              <Icon name="phone" size={18} /> Call midwife
+            </a>
+          )}
+          {message && profile.partnerPhone && (
+            <a className="action soft" href={smsLink(profile.partnerPhone, message)}>
+              <Icon name="message" size={18} /> Text {profile.partnerName?.trim() || "my partner"}
             </a>
           )}
         </div>
       )}
+
       <dl className="stats">
         <div>
           <dt>Apart</dt>
@@ -245,80 +367,157 @@ function AdviceCard({ advice, now, profile }: { advice: Advice; now: number; pro
   );
 }
 
-function Flags({ flags, onChange }: { flags: RedFlag[]; onChange: (f: RedFlag[]) => void }) {
-  const [open, setOpen] = useState(flags.length > 0);
+function TimerButton({ state, now, onToggle }: { state: State; now: number; onToggle: () => void }) {
+  const last = state.contractions[state.contractions.length - 1];
+  const on = state.running !== null;
   return (
-    <section className="flags">
-      <button className="flags-toggle" onClick={() => setOpen((o) => !o)} aria-expanded={open}>
-        Something feels wrong?
+    <div className="timer-wrap">
+      <button className={`timer ${on ? "on" : ""}`} onClick={onToggle} aria-pressed={on}>
+        {on ? (
+          <>
+            <span className="timer-count">{span(now - state.running!)}</span>
+            <span className="timer-label">Tap when it stops</span>
+          </>
+        ) : (
+          <>
+            <span className="timer-label big">Contraction started</span>
+            <span className="timer-sub">{last ? `Last one began ${span(now - last.start)} ago` : "Tap when one begins"}</span>
+          </>
+        )}
       </button>
-      {open && (
-        <div className="chips">
+    </div>
+  );
+}
+
+function GapChart({ contractions, rule, tall = false }: { contractions: Contraction[]; rule: number; tall?: boolean }) {
+  const gaps = intervalsMin(contractions).slice(tall ? -24 : -14);
+  if (gaps.length < 1) return null;
+  const W = 320;
+  const H = tall ? 140 : 80;
+  const max = Math.max(rule * 2, ...gaps);
+  const bw = W / Math.max(gaps.length, 6);
+  const y = (g: number) => H - (g / max) * H;
+  return (
+    <figure className="chart">
+      <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`Last ${gaps.length} gaps, from ${gaps[0].toFixed(1)} to ${gaps[gaps.length - 1].toFixed(1)} minutes`}>
+        {gaps.map((g, i) => (
+          <rect key={i} x={i * bw + 3} y={y(g)} width={bw - 6} height={H - y(g)} rx={4} className={g <= rule ? "bar met" : "bar"} />
+        ))}
+        <line x1={0} x2={W} y1={y(rule)} y2={y(rule)} className="rule-line" />
+      </svg>
+      <figcaption>
+        <span>
+          <i className="key-line" /> {rule} min: your midwife's rule
+        </span>
+        <span className="muted">oldest → newest</span>
+      </figcaption>
+    </figure>
+  );
+}
+
+function FlagsSheet({ flags, onChange, onClose }: { flags: RedFlag[]; onChange: (f: RedFlag[]) => void; onClose: () => void }) {
+  return (
+    <div className="sheet-back" onClick={onClose}>
+      <div className="sheet" role="dialog" aria-modal="true" aria-labelledby="flags-title" onClick={(e) => e.stopPropagation()}>
+        <div className="grab" aria-hidden />
+        <div className="sheet-head">
+          <h2 id="flags-title">Something feels wrong?</h2>
+          <button className="icon-btn" onClick={onClose} aria-label="Close">
+            <Icon name="close" />
+          </button>
+        </div>
+        <p className="muted">Tap anything that's happening. Any one of these means go or call now, whatever the timer says.</p>
+        <div className="flag-list">
           {(Object.keys(RED_FLAGS) as RedFlag[]).map((f) => {
             const on = flags.includes(f);
             return (
               <button
                 key={f}
-                className={`chip ${on ? "on" : ""}`}
+                className={`flag ${on ? "on" : ""}`}
                 aria-pressed={on}
                 onClick={() => onChange(on ? flags.filter((x) => x !== f) : [...flags, f])}
               >
+                <span className="box" aria-hidden>
+                  {on ? "✓" : ""}
+                </span>
                 {RED_FLAGS[f]}
               </button>
             );
           })}
         </div>
-      )}
-    </section>
+        <button className="primary" onClick={onClose}>
+          Done
+        </button>
+      </div>
+    </div>
   );
 }
 
-function Log({
+function History({
   contractions,
+  rule,
   onUndo,
   onClear,
 }: {
   contractions: Contraction[];
+  rule: number;
   onUndo: () => void;
   onClear: () => void;
 }) {
-  if (contractions.length === 0) return null;
   const gaps = intervalsMin(contractions);
   const rows = contractions
     .map((c, i) => ({ c, gap: i > 0 ? gaps[i - 1] : null }))
-    .reverse()
-    .slice(0, 12);
+    .reverse();
   return (
-    <section className="log">
-      <div className="log-head">
-        <h2>Recorded ({contractions.length})</h2>
-        <div>
-          <button className="ghost" onClick={onUndo}>
-            Undo last
-          </button>
-          <button className="ghost" onClick={onClear}>
-            Clear
-          </button>
+    <section className="history">
+      <header className="page-head">
+        <h1>History</h1>
+        <p className="muted">
+          <Icon name="phone" size={16} /> Stored only on this phone.
+        </p>
+      </header>
+      {contractions.length === 0 ? (
+        <div className="card empty">
+          <p>No contractions yet. Tap the big button on the Timer when one begins.</p>
         </div>
-      </div>
-      <table>
-        <thead>
-          <tr>
-            <th>Started</th>
-            <th>Lasted</th>
-            <th>Apart</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map(({ c, gap }) => (
-            <tr key={c.start}>
-              <td>{clock(c.start)}</td>
-              <td>{Math.round((c.end - c.start) / 1000)} s</td>
-              <td>{gap === null ? "–" : `${gap.toFixed(1)} min`}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      ) : (
+        <>
+          <div className="card">
+            <GapChart contractions={contractions} rule={rule} tall />
+          </div>
+          <div className="card log">
+            <div className="card-head">
+              <h2>Recorded ({contractions.length})</h2>
+              <div className="row">
+                <button className="ghost" onClick={onUndo}>
+                  Undo last
+                </button>
+                <button className="ghost" onClick={onClear}>
+                  Clear
+                </button>
+              </div>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Started</th>
+                  <th>Lasted</th>
+                  <th>Apart</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map(({ c, gap }) => (
+                  <tr key={c.start}>
+                    <td>{clock(c.start)}</td>
+                    <td>{Math.round((c.end - c.start) / 1000)} s</td>
+                    <td className={gap !== null && gap <= rule ? "met" : ""}>{gap === null ? "–" : `${gap.toFixed(1)} min`}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
     </section>
   );
 }
@@ -327,10 +526,14 @@ function Setup({
   initial,
   onDone,
   onSample,
+  onCancel,
+  onWipe,
 }: {
   initial: Profile | null;
   onDone: (p: Profile) => void;
   onSample: () => void;
+  onCancel?: () => void;
+  onWipe: () => void;
 }) {
   const [p, setP] = useState<Profile>(initial ?? defaultProfile(true));
   const setFirst = (firstBaby: boolean) =>
@@ -340,104 +543,119 @@ function Setup({
     setP((x) => ({ ...x, rule: { ...x.rule, [k]: num(v, x.rule[k]) } }));
 
   return (
-    <main className="app setup">
+    <div className="shell">
       <header className="top">
         <div className="brand">
-          <img src="/favicon.svg" alt="" width={28} height={28} />
+          <Logo />
           <span>Lullwatch</span>
         </div>
+        {onCancel && (
+          <button className="icon-btn" onClick={onCancel} aria-label="Close settings">
+            <Icon name="close" />
+          </button>
+        )}
       </header>
-      <h1>Know when to go.</h1>
-      <p className="lede">
-        Time your contractions and Lullwatch tells you when to pack and when to leave, counting your journey time.
-        Everything stays on this phone.
-      </p>
+      <main className="app setup">
+        {initial ? (
+          <header className="page-head">
+            <h1>Settings</h1>
+          </header>
+        ) : (
+          <header className="hero">
+            <h1>Know when to go.</h1>
+            <p className="lede">
+              Time your contractions and Lullwatch tells you when to pack and when to leave, counting your journey time.
+            </p>
+            <p className="assure">
+              <Icon name="shield" size={18} /> Private by design. Everything stays on this phone.
+            </p>
+            <button className="ghost wide" onClick={onSample}>
+              Try it with sample data
+            </button>
+          </header>
+        )}
 
-      <fieldset>
-        <legend>Is this your first baby?</legend>
-        <div className="seg">
-          <button className={p.firstBaby ? "on" : ""} onClick={() => setFirst(true)}>
-            Yes
-          </button>
-          <button className={!p.firstBaby ? "on" : ""} onClick={() => setFirst(false)}>
-            No
-          </button>
-        </div>
-      </fieldset>
-
-      <label>
-        Hospital or birth centre
-        <input
-          value={p.hospital}
-          placeholder="e.g. St Mary's"
-          onChange={(e) => setP({ ...p, hospital: e.target.value })}
-        />
-      </label>
-
-      <label>
-        Journey time there, in minutes
-        <input
-          inputMode="numeric"
-          value={p.travelMin}
-          onChange={(e) => setP({ ...p, travelMin: num(e.target.value, p.travelMin) })}
-        />
-      </label>
-
-      <fieldset>
-        <legend>Who should know when it's time?</legend>
-        <p className="muted small">
-          Optional. When it's time, Lullwatch writes the text and your own phone sends it. These numbers stay on this
-          phone.
-        </p>
-        <label>
-          Partner's name
-          <input value={p.partnerName ?? ""} placeholder="e.g. Sam" onChange={(e) => setP({ ...p, partnerName: e.target.value })} />
-        </label>
-        <label>
-          Partner's phone
-          <input
-            type="tel"
-            value={p.partnerPhone ?? ""}
-            placeholder="+44 7700 900123"
-            onChange={(e) => setP({ ...p, partnerPhone: e.target.value })}
-          />
-        </label>
-        <label>
-          Midwife or maternity unit phone
-          <input type="tel" value={p.midwifePhone ?? ""} onChange={(e) => setP({ ...p, midwifePhone: e.target.value })} />
-        </label>
-      </fieldset>
-
-      <fieldset>
-        <legend>When did your midwife say to come in?</legend>
-        <p className="muted small">
-          Contractions every <b>{p.rule.intervalMin}</b> minutes, lasting <b>{p.rule.durationSec}</b> seconds, for{" "}
-          <b>{p.rule.sustainMin}</b> minutes. Change these to match what you were told.
-        </p>
-        <div className="rule">
+        <section className="card form">
+          <h2>
+            <span className="num">1</span> About you
+          </h2>
+          <fieldset>
+            <legend>Is this your first baby?</legend>
+            <div className="seg">
+              <button className={p.firstBaby ? "on" : ""} onClick={() => setFirst(true)}>
+                Yes
+              </button>
+              <button className={!p.firstBaby ? "on" : ""} onClick={() => setFirst(false)}>
+                No
+              </button>
+            </div>
+          </fieldset>
           <label>
-            Minutes apart
-            <input inputMode="numeric" value={p.rule.intervalMin} onChange={(e) => setRule("intervalMin", e.target.value)} />
+            Hospital or birth centre
+            <input value={p.hospital} placeholder="e.g. St Mary's" onChange={(e) => setP({ ...p, hospital: e.target.value })} />
           </label>
           <label>
-            Seconds long
-            <input inputMode="numeric" value={p.rule.durationSec} onChange={(e) => setRule("durationSec", e.target.value)} />
+            Journey time there, in minutes
+            <input inputMode="numeric" value={p.travelMin} onChange={(e) => setP({ ...p, travelMin: num(e.target.value, p.travelMin) })} />
+          </label>
+        </section>
+
+        <section className="card form">
+          <h2>
+            <span className="num">2</span> Who should know when it's time?
+          </h2>
+          <p className="muted small">
+            Optional. When it's time, Lullwatch writes the text and your own phone sends it. These numbers stay on this
+            phone.
+          </p>
+          <label>
+            Partner's name
+            <input value={p.partnerName ?? ""} placeholder="e.g. Sam" onChange={(e) => setP({ ...p, partnerName: e.target.value })} />
           </label>
           <label>
-            For minutes
-            <input inputMode="numeric" value={p.rule.sustainMin} onChange={(e) => setRule("sustainMin", e.target.value)} />
+            Partner's phone
+            <input type="tel" value={p.partnerPhone ?? ""} placeholder="+44 7700 900123" onChange={(e) => setP({ ...p, partnerPhone: e.target.value })} />
           </label>
-        </div>
-      </fieldset>
+          <label>
+            Midwife or maternity unit phone
+            <input type="tel" value={p.midwifePhone ?? ""} onChange={(e) => setP({ ...p, midwifePhone: e.target.value })} />
+          </label>
+        </section>
 
-      <button className="primary" onClick={() => onDone(p)}>
-        {initial ? "Save" : "Start timing"}
-      </button>
-      {!initial && (
-        <button className="ghost wide" onClick={onSample}>
-          Try it with sample data
+        <section className="card form">
+          <h2>
+            <span className="num">3</span> When did your midwife say to come in?
+          </h2>
+          <p className="sentence">
+            Contractions every <b>{p.rule.intervalMin}</b> minutes, lasting <b>{p.rule.durationSec}</b> seconds, for{" "}
+            <b>{p.rule.sustainMin}</b> minutes.
+          </p>
+          <div className="rule">
+            <label>
+              Minutes apart
+              <input inputMode="numeric" value={p.rule.intervalMin} onChange={(e) => setRule("intervalMin", e.target.value)} />
+            </label>
+            <label>
+              Seconds long
+              <input inputMode="numeric" value={p.rule.durationSec} onChange={(e) => setRule("durationSec", e.target.value)} />
+            </label>
+            <label>
+              For minutes
+              <input inputMode="numeric" value={p.rule.sustainMin} onChange={(e) => setRule("sustainMin", e.target.value)} />
+            </label>
+          </div>
+          <p className="muted small">Change these to match what you were told.</p>
+        </section>
+
+        <button className="primary sticky" onClick={() => onDone(p)}>
+          {initial ? "Save" : "Start timing"}
         </button>
-      )}
-    </main>
+        {initial && (
+          <button className="danger-link" onClick={onWipe}>
+            Delete all my data
+          </button>
+        )}
+      </main>
+    </div>
   );
 }

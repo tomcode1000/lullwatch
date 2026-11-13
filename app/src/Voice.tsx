@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { interpret, type Heard } from "./commands";
+import { Icon } from "./Icon";
 
 // Hands-free listening. Only while switched on: the mic waits for speech,
 // keeps a short pre-roll so a quick "now" isn't clipped, and sends each
@@ -145,9 +146,16 @@ export function Voice({ onHeard }: { onHeard: (h: Heard, text: string) => void }
         aria-pressed={status !== "off" && status !== "error"}
         onClick={() => (status === "off" || status === "error" ? start() : stop())}
       >
+        <span className="mic" aria-hidden>
+          <Icon name="mic" size={18} />
+        </span>
+        <span className="voice-text">
+          <b>{label[status]}</b>
+          <span className="small">
+            {status === "off" || status === "error" ? "Hands-free: say “now” and “stop”" : "Tap to turn off"}
+          </span>
+        </span>
         <span className="dot" aria-hidden />
-        {label[status]}
-        {status !== "off" && status !== "error" && <span className="muted small"> · tap to turn off</span>}
       </button>
       {note && <p className="muted small">{note}</p>}
     </section>
