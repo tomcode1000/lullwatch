@@ -3,6 +3,11 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App'
 
+// Offline support in the built app only, so development always loads fresh code.
+if (import.meta.env.PROD && "serviceWorker" in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}))
+}
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <App />

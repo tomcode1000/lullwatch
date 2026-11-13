@@ -65,14 +65,19 @@ const TYPES: Record<string, string> = {
   ".svg": "image/svg+xml",
   ".json": "application/json",
   ".png": "image/png",
+  ".webmanifest": "application/manifest+json",
+  ".wasm": "application/wasm",
 };
+
+// Hashed build files never change; the page, manifest and offline worker must always be fresh.
+const cacheFor = (file: string) => (/[\\/]assets[\\/]/.test(file) ? "public, max-age=31536000, immutable" : "no-cache");
 
 async function serveStatic(path: string, res: ServerResponse) {
   const safe = normalize(path).replace(/^([/\\])+/, "").replace(/^(\.\.[/\\])+/, "");
   for (const file of [join(STATIC, safe), join(STATIC, "index.html")]) {
     try {
       const body = await readFile(file);
-      res.writeHead(200, { "content-type": TYPES[extname(file)] ?? "application/octet-stream" });
+      res.writeHead(200, { "content-type": TYPES[extname(file)] ?? "application/octet-stream", "cache-control": cacheFor(file) });
       return res.end(body);
     } catch {
       // try the next candidate
