@@ -403,7 +403,7 @@ function GapChart({ contractions, rule, tall = false }: { contractions: Contract
       </svg>
       <figcaption>
         <span>
-          <i className="key-line" /> {rule} min: your midwife's rule
+          <i className="key-line" /> {rule} min apart: time to go in
         </span>
         <span className="muted">oldest → newest</span>
       </figcaption>
@@ -532,8 +532,15 @@ function Setup({
   onWipe: () => void;
 }) {
   const [p, setP] = useState<Profile>(initial ?? defaultProfile(true));
+  const standard = (r: Profile["rule"], first: boolean) => {
+    const s = first ? FIRST_BABY_RULE : LATER_BABY_RULE;
+    return r.intervalMin === s.intervalMin && r.durationSec === s.durationSec && r.sustainMin === s.sustainMin;
+  };
+  // Open only when she has already saved her midwife's own numbers.
+  const [customRule, setCustomRule] = useState(() => !!initial && !standard(initial.rule, initial.firstBaby));
+  // A custom rule from her midwife stays when she changes the first-baby answer.
   const setFirst = (firstBaby: boolean) =>
-    setP((x) => ({ ...x, firstBaby, rule: firstBaby ? FIRST_BABY_RULE : LATER_BABY_RULE }));
+    setP((x) => ({ ...x, firstBaby, rule: customRule ? x.rule : firstBaby ? FIRST_BABY_RULE : LATER_BABY_RULE }));
   const num = (v: string, fallback: number) => (Number.isFinite(+v) && +v > 0 ? +v : fallback);
   const setRule = (k: keyof Profile["rule"], v: string) =>
     setP((x) => ({ ...x, rule: { ...x.rule, [k]: num(v, x.rule[k]) } }));
@@ -620,27 +627,46 @@ function Setup({
 
         <section className="card form">
           <h2>
-            <span className="num">3</span> When did your midwife say to come in?
+            <span className="num">3</span> When to go in
           </h2>
+          <p className="muted small">
+            {customRule ? "Your midwife's numbers:" : `Lullwatch uses the standard rule for ${p.firstBaby ? "a first baby" : "a second or later baby"}. You don't need to set anything.`}
+          </p>
           <p className="sentence">
             Contractions every <b>{p.rule.intervalMin}</b> minutes, lasting <b>{p.rule.durationSec}</b> seconds, for{" "}
             <b>{p.rule.sustainMin}</b> minutes.
           </p>
-          <div className="rule">
-            <label>
-              Minutes apart
-              <input inputMode="numeric" value={p.rule.intervalMin} onChange={(e) => setRule("intervalMin", e.target.value)} />
-            </label>
-            <label>
-              Seconds long
-              <input inputMode="numeric" value={p.rule.durationSec} onChange={(e) => setRule("durationSec", e.target.value)} />
-            </label>
-            <label>
-              For minutes
-              <input inputMode="numeric" value={p.rule.sustainMin} onChange={(e) => setRule("sustainMin", e.target.value)} />
-            </label>
-          </div>
-          <p className="muted small">Change these to match what you were told.</p>
+          {customRule ? (
+            <>
+              <div className="rule">
+                <label>
+                  Minutes apart
+                  <input inputMode="numeric" value={p.rule.intervalMin} onChange={(e) => setRule("intervalMin", e.target.value)} />
+                </label>
+                <label>
+                  Seconds long
+                  <input inputMode="numeric" value={p.rule.durationSec} onChange={(e) => setRule("durationSec", e.target.value)} />
+                </label>
+                <label>
+                  For minutes
+                  <input inputMode="numeric" value={p.rule.sustainMin} onChange={(e) => setRule("sustainMin", e.target.value)} />
+                </label>
+              </div>
+              <button
+                className="link small"
+                onClick={() => {
+                  setCustomRule(false);
+                  setP((x) => ({ ...x, rule: x.firstBaby ? FIRST_BABY_RULE : LATER_BABY_RULE }));
+                }}
+              >
+                Use the standard rule
+              </button>
+            </>
+          ) : (
+            <button className="ghost wide" onClick={() => setCustomRule(true)}>
+              My midwife gave me different numbers
+            </button>
+          )}
         </section>
 
         <button className="primary sticky" onClick={() => onDone(p)}>
