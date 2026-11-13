@@ -3,8 +3,10 @@
 // Never cached: anything under /api (the AI, voice, attestation) and the
 // Intel and NVIDIA checks, which must always be fresh.
 
-const CACHE = "lullwatch-v1";
-const SHELL = ["/", "/favicon.svg", "/manifest.webmanifest", "/icon-192.png", "/icon-512.png"];
+const CACHE = "lullwatch-v2";
+const SHELL = ["/app/", "/", "/favicon.svg", "/manifest.webmanifest", "/icon-192.png", "/icon-512.png"];
+// Each page is saved under one key, whatever its query (?sample, ?proof).
+const pageKey = (url) => (url.pathname.startsWith("/app") ? "/app/" : "/");
 const FONTS = ["https://fonts.googleapis.com", "https://fonts.gstatic.com"];
 
 self.addEventListener("install", (e) => {
@@ -31,10 +33,10 @@ self.addEventListener("fetch", (e) => {
     e.respondWith(
       fetch(req)
         .then((res) => {
-          put("/", res.clone());
+          if (res.ok) put(pageKey(url), res.clone());
           return res;
         })
-        .catch(() => caches.match("/")),
+        .catch(() => caches.match(pageKey(url))),
     );
     return;
   }

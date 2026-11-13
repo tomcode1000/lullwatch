@@ -4,6 +4,13 @@
 
 Built at the NEAR HACKATHON (1–14 Nov 2026), track **03 Privacy & Private AI**.
 
+**Live:** [lullwatch.54-255-109-186.sslip.io](https://lullwatch.54-255-109-186.sslip.io) (landing page)
+
+To try it:
+- Open [/app/?sample](https://lullwatch.54-255-109-186.sslip.io/app/?sample) to load a fictional labour. You'll see "Start packing" with a leave-by time.
+- Tap **Call midwife** to get the call script, written and verified in the TEE.
+- Open [/app/?proof](https://lullwatch.54-255-109-186.sslip.io/app/?proof) to watch your browser check the sealed hardware with Intel and NVIDIA.
+
 ## The problem
 
 In the last weeks of pregnancy, it's hard to tell when contractions mean it's time to go. Women go too early and are sent home, or leave it too late. Pregnancy data is also among the most sensitive data there is: in August 2025 a US jury found Meta liable for collecting Flo app users' period and pregnancy data.
@@ -19,7 +26,7 @@ In the last weeks of pregnancy, it's hard to tell when contractions mean it's ti
 - **Warning signs come first:** waters breaking, bleeding, the baby moving less and other red flags turn the screen to "Go now", whatever the count says.
 - **Ask Lullwatch:** a short, calm AI companion (Qwen3.8-27B on NEAR AI Cloud, thinking off) that explains the numbers and helps with breathing or packing. It is never allowed to change the decision.
 - **End-to-end encrypted:** her browser seals every message to the model's attested key (X25519 + XChaCha20-Poly1305, NEAR AI Cloud E2EE v2). Our server relays ciphertext only and refuses plain text.
-- **Proof of privacy:** each reply comes from a model inside a TEE (Intel TDX + NVIDIA confidential GPUs) on NEAR AI Cloud. Her browser checks the hardware with Intel and NVIDIA itself, and checks every reply's signature. Open the app with `?proof` to run the checks straight away.
+- **Proof of privacy:** each reply comes from a model inside a TEE (Intel TDX + NVIDIA confidential GPUs) on NEAR AI Cloud. Her browser checks the hardware with Intel and NVIDIA itself, and checks every reply's signature. Open the app with `/app/?proof` to run the checks straight away.
 
 ## How the privacy proof works
 
@@ -112,7 +119,7 @@ cd server && npm run dev          # API on :8787
 cd app && npm install && npm run dev   # app on :5173, proxies /api
 ```
 
-Open the app with `?sample` (for example http://localhost:5173/?sample) to load a fictional labour.
+The landing page is at http://localhost:5173/ and the app at http://localhost:5173/app/. Open the app with `?sample` (http://localhost:5173/app/?sample) to load a fictional labour, or `?proof` to run the privacy checks straight away.
 
 Tests: `cd app && npm test` (engine, scenarios, voice commands, verification), `cd server && npm test` (spending guard and prompt). Live companion eval: with the server running, `cd app && node ../evals/run.ts`.
 
@@ -120,6 +127,8 @@ Tests: `cd app && npm test` (engine, scenarios, voice commands, verification), `
 
 ```
 app/      React + Vite web app
+  index.html             the landing page (served at /)
+  app/index.html         the app (served at /app/)
   src/engine/labour.ts   the decision rules and forecast
   src/verify.ts          the in-browser privacy checks (NVIDIA, Intel TDX, signatures)
   src/e2ee.ts            end-to-end encryption to the attested model key

@@ -2,24 +2,217 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lullwatch · Know when to go</title>
+    <meta name="description" content="A private labour companion. Time your contractions and Lullwatch tells you when to pack and when to leave for the hospital. Its AI runs on sealed hardware, and your phone checks the proof." />
+    <meta name="theme-color" content="#061416" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="manifest" href="/manifest.webmanifest" />
-    <link rel="apple-touch-icon" href="/icon-192.png" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-title" content="Lullwatch" />
-    <meta name="description" content="Know when to go. Time contractions and Lullwatch tells you when to pack and when to leave, with private AI on sealed hardware." />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#f6f7f6" />
+    <meta property="og:title" content="Lullwatch · Know when to go" />
+    <meta property="og:description" content="Time contractions, know when to pack and when to leave. Private AI on sealed hardware, proven on your phone." />
+    <meta property="og:image" content="/art/hero.jpg" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
     />
-    <title>Lullwatch</title>
+    <link rel="stylesheet" href="/src/landing.css" />
+    <!--
+      Photos (free under the Unsplash License):
+      hero.jpg    Mustafa Omar, https://unsplash.com/photos/silhouette-of-pregnant-woman-tEz8JU1j-00
+      privacy.jpg Martin Baron, https://unsplash.com/photos/a-pregnant-woman-standing-in-front-of-a-window-9aNAZGdVVQc
+    -->
   </head>
   <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
+    <svg width="0" height="0" style="position: absolute" aria-hidden="true">
+      <filter id="grain"><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" stitchTiles="stitch" /><feColorMatrix type="saturate" values="0" /></filter>
+      <symbol id="logo" viewBox="0 0 32 32"><circle cx="16" cy="16" r="15" fill="currentColor" /><path d="M6 18c3-6 5-6 7 0s4 6 7 0 4-6 6 0" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" /></symbol>
+      <symbol id="tick" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" /></symbol>
+    </svg>
+
+    <header class="nav">
+      <a class="lockup" href="/"><svg width="30" height="30"><use href="#logo" /></svg><span>Lullwatch</span></a>
+      <nav>
+        <a href="#how">How it works</a>
+        <a href="#privacy">Privacy</a>
+        <a href="#safety">Safety</a>
+        <a class="nav-cta" href="/app/">Open the app</a>
+      </nav>
+    </header>
+
+    <!-- HERO: graded photo, one message, few words -->
+    <section class="hero-l">
+      <div class="art" aria-hidden="true">
+        <div class="photo" style="background-image: url(/art/hero.jpg)"></div>
+        <div class="tint"></div>
+        <div class="glow"></div>
+        <div class="shade"></div>
+        <svg class="grain"><rect width="100%" height="100%" filter="url(#grain)" /></svg>
+      </div>
+      <div class="hero-copy">
+        <p class="kicker">Introducing Lullwatch</p>
+        <h1>Know when <em>to go.</em></h1>
+        <p class="lede-l">
+          A private labour companion. Time your contractions and Lullwatch tells you when to pack and when to leave
+          for the hospital, counting your journey. Its AI runs on sealed hardware, and your phone checks the proof.
+        </p>
+        <div class="ctas">
+          <a class="btn primary-l" href="/app/?sample">Try it with a sample labour</a>
+          <a class="btn ghost-l" href="/app/">Open Lullwatch</a>
+        </div>
+        <p class="pill-l"><span class="dot"></span> Private AI on NEAR AI Cloud · free · no sign-up</p>
+      </div>
+    </section>
+
+    <!-- THE PROBLEM -->
+    <section class="band light">
+      <div class="wrap">
+        <p class="kicker dark">The hardest question in late pregnancy</p>
+        <h2 class="display">“Is this it?”</h2>
+        <div class="trio">
+          <article>
+            <span class="num-l">01</span>
+            <h3>Too early</h3>
+            <p>Go in at the first strong contraction and you're often sent home, then back again hours later.</p>
+          </article>
+          <article>
+            <span class="num-l">02</span>
+            <h3>Too late</h3>
+            <p>Wait too long and the journey itself becomes the risk, especially with a long drive or a second baby.</p>
+          </article>
+          <article>
+            <span class="num-l">03</span>
+            <h3>Too exposed</h3>
+            <p>
+              Pregnancy data is among the most private there is. In August 2025 a US jury found Meta liable for
+              collecting Flo app users' period and pregnancy data.
+            </p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- HOW IT WORKS: real app screens -->
+    <section class="band" id="how">
+      <div class="wrap">
+        <p class="kicker dark">How it works</p>
+        <h2 class="display">Three taps from <em>“is this it?”</em> to the door.</h2>
+        <div class="steps-l">
+          <article>
+            <figure class="phone"><img src="/shots/home.png" alt="Lullwatch timer: Start packing, leave for St Mary's by a set time" /></figure>
+            <span class="num-l">01 · Time it</span>
+            <h3>Tap, or just say “now”.</h3>
+            <p>Tap the big button when a contraction starts and stops, or switch on voice and say “now” and “stop”. The log stays on your phone.</p>
+          </article>
+          <article>
+            <figure class="phone"><img src="/shots/history.png" alt="Gaps between contractions shrinking toward the 5-minute line" /></figure>
+            <span class="num-l">02 · Know when</span>
+            <h3>“Leave by 8:36 AM.”</h3>
+            <p>Fixed rules (5-1-1 for a first baby, unless your midwife said otherwise) watch the trend, forecast when you'll meet it, and subtract your journey time.</p>
+          </article>
+          <article>
+            <figure class="phone"><img src="/shots/call.png" alt="What to say when you call: a script written from the timer" /></figure>
+            <span class="num-l">03 · Call and go</span>
+            <h3>Know what to say.</h3>
+            <p>“Call midwife” opens a short script for the call, written from your timer. One tap texts your partner where you're going.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- PRIVACY: dark band with its own photo -->
+    <section class="band dark-band" id="privacy">
+      <div class="art" aria-hidden="true">
+        <div class="photo right" style="background-image: url(/art/privacy.jpg)"></div>
+        <div class="tint"></div>
+        <div class="shade side"></div>
+        <svg class="grain"><rect width="100%" height="100%" filter="url(#grain)" /></svg>
+      </div>
+      <div class="wrap split">
+        <div>
+          <p class="kicker">Private by proof, not by promise</p>
+          <h2 class="display light-ink">Nobody can read it. <em>Not even us.</em></h2>
+          <p class="body-l">
+            Lullwatch's AI runs inside sealed hardware (a TEE) on NEAR AI Cloud. Your questions are encrypted on your
+            phone to a key that only that hardware holds, and your phone checks the hardware itself, with Intel and
+            NVIDIA, before trusting a single reply.
+          </p>
+          <a class="btn primary-l" href="/app/?proof">Run the proof yourself</a>
+        </div>
+        <div class="cert-l">
+          <p class="cert-head"><svg width="18" height="18"><use href="#tick" /></svg> Sealed hardware verified</p>
+          <ul>
+            <li><svg><use href="#tick" /></svg>The proof is fresh, made just now for this app</li>
+            <li><svg><use href="#tick" /></svg>The AI runs on sealed hardware</li>
+            <li><svg><use href="#tick" /></svg>NVIDIA confirms the GPUs are genuine and locked</li>
+            <li><svg><use href="#tick" /></svg>Intel confirms the CPU enclave is up to date</li>
+            <li><svg><use href="#tick" /></svg>The key that signs replies lives inside that enclave</li>
+            <li><svg><use href="#tick" /></svg>The software inside matches its published measurements</li>
+            <li class="sep"><svg><use href="#tick" /></svg>Every reply is signed inside the sealed hardware</li>
+            <li><svg><use href="#tick" /></svg>Your words reached the AI unchanged</li>
+            <li><svg><use href="#tick" /></svg>The reply reached you unchanged</li>
+          </ul>
+          <p class="cert-foot">Checked in your browser on every visit · <span class="mono-l">Qwen3.8-27B · Intel TDX · NVIDIA CC</span></p>
+        </div>
+      </div>
+      <div class="wrap where-l">
+        <div><span class="mono-l">On your phone</span><p>Contractions, contacts and your midwife's numbers. Never uploaded.</p></div>
+        <div><span class="mono-l">In sealed hardware</span><p>Your questions, encrypted end to end, and voice turned into words.</p></div>
+        <div><span class="mono-l">On our server</span><p>Nothing after a reply. It relays scrambled text and keeps only a spending tally.</p></div>
+      </div>
+    </section>
+
+    <!-- SAFETY -->
+    <section class="band light" id="safety">
+      <div class="wrap">
+        <p class="kicker dark">Safe by design</p>
+        <h2 class="display">The AI explains. <em>Rules decide.</em></h2>
+        <div class="trio">
+          <article>
+            <h3>Fixed rules make the call</h3>
+            <p>When to pack and when to leave comes from plain, tested code, not from a chatbot. The AI can explain it but can never move it.</p>
+          </article>
+          <article>
+            <h3>Warning signs come first</h3>
+            <p>Waters breaking, bleeding, the baby moving less: any one turns the screen to “Go now”, whatever the count says.</p>
+          </article>
+          <article>
+            <h3>Your midwife wins</h3>
+            <p>Lullwatch uses the standard rule, and her own numbers replace it. It supports your decision; it doesn't replace your midwife.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- CLOSING CTA -->
+    <section class="closing">
+      <div class="art" aria-hidden="true">
+        <div class="photo" style="background-image: url(/art/hero.jpg)"></div>
+        <div class="tint"></div>
+        <div class="shade full"></div>
+      </div>
+      <div class="wrap center">
+        <svg class="mark" width="56" height="56"><use href="#logo" /></svg>
+        <h2 class="display light-ink">When it starts, <em>you'll know.</em></h2>
+        <p class="body-l">Free, no account, works offline once installed. Add it to your home screen before the day comes.</p>
+        <div class="ctas center">
+          <a class="btn primary-l" href="/app/">Open Lullwatch</a>
+          <a class="btn ghost-l" href="/app/?sample">See a sample labour</a>
+        </div>
+      </div>
+    </section>
+
+    <footer class="foot-l">
+      <div class="wrap foot-row">
+        <a class="lockup" href="/"><svg width="24" height="24"><use href="#logo" /></svg><span>Lullwatch</span></a>
+        <p>Lullwatch helps you decide; it does not replace your midwife or doctor. If something feels wrong, call them.</p>
+        <nav>
+          <a href="https://github.com/tomcode1000/lullwatch">Source code</a>
+          <a href="https://x.com/Toluinweb3">X</a>
+          <span class="mono-l">Built at NEAR HACKATHON 2026</span>
+        </nav>
+      </div>
+    </footer>
   </body>
 </html>

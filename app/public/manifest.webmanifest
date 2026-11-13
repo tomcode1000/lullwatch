@@ -2,7 +2,7 @@
   "name": "Lullwatch",
   "short_name": "Lullwatch",
   "description": "Know when to go. A private labour companion: time contractions and know when to pack and when to leave.",
-  "start_url": "/",
+  "start_url": "/app/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",

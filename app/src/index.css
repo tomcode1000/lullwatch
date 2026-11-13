@@ -28,6 +28,8 @@
   --alarm-line: #f2b8b2;
 
   --sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --serif: "Instrument Serif", Georgia, serif;
+  --glow: #7fd3cb;
   --mono: "JetBrains Mono", ui-monospace, monospace;
   --radius: 16px;
   --shadow: 0 1px 2px rgb(16 24 40 / 0.04), 0 1px 3px rgb(16 24 40 / 0.04);
@@ -409,6 +411,24 @@ input:focus { outline: none; border-color: var(--brand); box-shadow: 0 0 0 3px c
   input { border-color: var(--line); }
   .flag .box { border-color: var(--line); }
 }
+
+/* Shared brand voice with the landing page: serif display lines, mono labels. */
+.hero h1, .page-head h1, .stage h1, .cert h1, .sheet-head h2, .leave-time, .timer-count, .timer-label.big, .brand {
+  font-family: var(--serif); font-weight: 400; letter-spacing: -0.01em;
+}
+.brand { font-size: 1.45rem; }
+.hero h1 { font-size: 3.1rem; line-height: 0.98; }
+.hero h1 em, .page-head h1 em { font-style: italic; color: var(--brand); }
+.page-head h1 { font-size: 2.2rem; }
+.stage h1 { font-size: 2.05rem; line-height: 1; }
+.stage.go-now h1 { font-size: 2.5rem; }
+.leave-time { font-size: 2.1rem; line-height: 1; letter-spacing: 0; }
+.cert h1 { font-size: 2.05rem; line-height: 1.05; }
+.sheet-head h2 { font-size: 1.6rem; }
+.timer-label.big { font-size: 1.75rem; line-height: 1.05; }
+.timer-count { font-size: 3.6rem; letter-spacing: 0; }
+.eyebrow, .stats dt, .leave-label, th, .also b { font-family: var(--mono); font-weight: 500; letter-spacing: 0.06em; }
+.stage .eyebrow { font-size: 0.66rem; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }

@@ -74,7 +74,9 @@ const cacheFor = (file: string) => (/[\\/]assets[\\/]/.test(file) ? "public, max
 
 async function serveStatic(path: string, res: ServerResponse) {
   const safe = normalize(path).replace(/^([/\\])+/, "").replace(/^(\.\.[/\\])+/, "");
-  for (const file of [join(STATIC, safe), join(STATIC, "index.html")]) {
+  // The app lives at /app/ (one page, its own routes); everything else falls back to the landing page.
+  const page = /^\/app(\/|$)/.test(path) ? "app/index.html" : "index.html";
+  for (const file of [join(STATIC, safe), join(STATIC, page)]) {
     try {
       const body = await readFile(file);
       res.writeHead(200, { "content-type": TYPES[extname(file)] ?? "application/octet-stream", "cache-control": cacheFor(file) });

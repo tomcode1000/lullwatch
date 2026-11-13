@@ -665,7 +665,9 @@ function Setup({
           </header>
         ) : (
           <header className="hero">
-            <h1>Know when to go.</h1>
+            <h1>
+              Know when <em>to go.</em>
+            </h1>
             <p className="lede">
               Time your contractions and Lullwatch tells you when to pack and when to leave, counting your journey time.
             </p>

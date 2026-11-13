@@ -84,4 +84,4 @@ sudo systemctl reload caddy
 
 echo
 echo "Done. Next: nano $APP/.env  (paste the key after NEARAI_API_KEY=), then: sudo systemctl restart lullwatch"
-echo "Then open https://$DOMAIN/?sample"
+echo "Then open https://$DOMAIN/ (landing) or https://$DOMAIN/app/?sample"
