@@ -1,0 +1,261 @@
+LULLWATCH: FIGMA DESIGN BRIEF
+=============================
+
+TOTAL: 16 SCREENS (mobile), plus 1 design-system page.
+Some screens also need a few small state variants. These are listed with
+each screen and are not counted as extra screens.
+
+Frame size: 390 x 844 (iPhone 14/15). Light mode for all 16.
+Dark mode for screens 5 to 10 if time allows (see "Dark mode" below).
+
+Deadline: the hackathon closes 14 Nov at 23:59 UTC, so time is very short.
+Please send the Figma link by 13 Nov, end of day, in this order:
+  FIRST (must have): 1, 5, 6, 9, 10, 13, 14 and the design-system page.
+  THEN, if time allows: the remaining screens.
+The app has to be built from the designs and filmed before the deadline.
+
+
+1. WHAT LULLWATCH IS
+--------------------
+Tagline: "Know when to go."
+
+A phone app for a woman in labour. She times her contractions and the app
+tells her when to start packing and when to leave for the hospital. It
+counts her journey time and gives her a clock time, for example
+"Leave by 4:36 PM".
+
+The app also has a calm AI helper she can ask questions, by typing or by
+voice. Pregnancy data is very private, so the AI runs on sealed, locked
+hardware that nobody can look inside, not even us. Her phone checks a proof
+of that and shows it to her as "Verified".
+
+It is being entered in the NEAR Hackathon, in the "Privacy & Private AI"
+track. The judges are investors and engineers, so the privacy proof has to
+look trustworthy and clear, not hidden.
+
+
+2. WHO USES IT, AND WHEN
+------------------------
+- A pregnant woman in early labour, usually at home. Often at night, often
+  in pain, sometimes holding the phone in one hand while leaning on
+  something.
+- Her partner may be holding the phone for her.
+
+So the design must:
+- Be readable at a glance: one big message and one big button.
+- Have very large tap targets. The main button is pressed during a
+  contraction.
+- Feel calm, warm and reassuring. Not clinical or hospital-like, and not a
+  baby-pink cliché.
+- Make the urgent "Go now" state impossible to miss, without being scary on
+  the other screens.
+- Show privacy as something she can see ("Verified", "Stays on this
+  phone"), with the technical detail one tap away.
+
+
+3. THE FOUR STAGES (the heart of the app)
+-----------------------------------------
+The home screen changes with her progress. Each stage needs its own colour
+and feel:
+
+  1. KEEP TIMING   : early on, relaxed. "There's time yet."
+  2. START PACKING : getting closer. Get the bag ready.
+  3. TIME TO LEAVE : leave now, or by a clock time. Text her partner and
+                     call her midwife.
+  4. GO NOW        : urgent. A warning sign was reported (for example
+                     bleeding). Always overrides the other three.
+
+Colours in the current build (please improve on them):
+  calm green-grey, soft yellow, warm peach, alert red.
+
+
+4. THE 16 SCREENS
+-----------------
+
+ONBOARDING (4 screens)
+
+ 1. Welcome
+    - Logo, then the headline "Know when to go."
+    - Text: "Time your contractions and Lullwatch tells you when to pack
+      and when to leave, counting your journey time. Everything stays on
+      this phone."
+    - Main button: "Get started". Second button: "Try it with sample data".
+    - A small privacy line, for example a lock icon with "Private by
+      design".
+
+ 2. Setup, step 1 of 3: About you
+    - "Is this your first baby?" Yes / No toggle.
+    - "Hospital or birth centre" (example: St Mary's).
+    - "Journey time there, in minutes" (example: 25).
+
+ 3. Setup, step 2 of 3: Who should know when it's time?
+    - Optional. Text: "When it's time, Lullwatch writes the text and your
+      own phone sends it. These numbers stay on this phone."
+    - Partner's name (example: Sam).
+    - Partner's phone.
+    - Midwife or maternity unit phone.
+    - A "Skip" option.
+
+ 4. Setup, step 3 of 3: When did your midwife say to come in?
+    - Three numbers, shown as a sentence: "Contractions every [5] minutes,
+      lasting [60] seconds, for [60] minutes."
+    - Text: "Change these to match what you were told."
+    - Button: "Start timing".
+
+HOME / TIMER (6 screens, all the same layout in different states)
+Every home screen has:
+    - Top bar: logo, plus icons for Voice, Ask and Settings (or a bottom
+      tab bar: your choice).
+    - A STAGE CARD with:
+        - headline (the stage name)
+        - one-line reason
+        - "Leave for St Mary's by 4:36 PM · in 1 h 12 min"
+        - three small stats: Apart (5.2 min), Lasting (58 s), Rule met
+          (Yes / 4:11 PM / –)
+    - THE BIG BUTTON: "Contraction started" / "It stopped". This is the
+      most important element in the app.
+    - A small link: "Something feels wrong?" (opens screen 11).
+    - A footer line: "Lullwatch helps you decide; it does not replace your
+      midwife or doctor."
+
+ 5. Home: first use, nothing recorded yet
+    - Big button sub-text: "Tap when one begins". The stats are empty.
+
+ 6. Home: contraction in progress
+    - The big button is "on" and shows a live count: "It stopped ·
+      Contraction: 42s". It should feel active, perhaps with a gentle pulse
+      or ring.
+
+ 7. Home: KEEP TIMING
+    - "Contractions are getting closer. Keep timing; there's time yet."
+    - Show the sample-data banner here: "Sample data: a fictional labour,
+      for trying the app. Start fresh".
+
+ 8. Home: START PACKING
+    - "Your contractions are closing in on your midwife's rule. Get your
+      bag ready."
+    - Leave-by time shown.
+
+ 9. Home: TIME TO LEAVE
+    - "It's time to leave for the hospital." "Leave for St Mary's now."
+    - Two action buttons: "Text Sam" and "Call midwife".
+
+10. Home: GO NOW (urgent)
+    - "Warning sign: Bleeding from the vagina. Go to the hospital or call
+      now."
+    - "Head to St Mary's or call your midwife or emergency number now."
+    - "Call midwife" is the dominant, urgent button. "Text Sam" is second.
+
+FEATURES (6 screens)
+
+11. Something feels wrong? (bottom sheet over home)
+    - Six warning signs she can tap on and off:
+        - Waters broke or leaking fluid
+        - Bleeding from the vagina
+        - Baby moving less than usual
+        - Severe pain that doesn't stop between contractions
+        - Bad headache, blurred vision or sudden swelling
+        - Fever or feeling very unwell
+    - Selecting any one sends home to GO NOW (screen 10).
+
+12. Voice mode (hands-free)
+    - She says "now" when a contraction starts and "stop" when it ends, or
+      asks a question out loud.
+    - Hint text: "Say 'now' when one starts and 'stop' when it ends, or
+      ask a question."
+    - A short privacy line, for example "Your voice is understood inside
+      sealed hardware."
+    - State variants (shown small on the same frame): Off · Listening… ·
+      Hearing you… · Understanding… · Heard: "now" · Microphone not
+      available.
+    - This can be an overlay on home or its own screen. Your choice.
+
+13. Ask Lullwatch (AI chat)
+    - Title "Ask Lullwatch". Text: "Your questions are encrypted on this
+      phone so only the AI inside sealed hardware can read them."
+    - Empty state with three suggestion chips:
+        - "How long until I need to leave?"
+        - "What should be in my bag?"
+        - "How do I breathe through this?"
+    - Conversation state: her question, a short calm reply, and under each
+      reply a small badge "✓ Reply verified" that opens out.
+    - Loading state: "Thinking…".
+    - Text box with a send button, and a mic button.
+
+14. Privacy proof ("Verified" panel)
+    - The screen that shows judges the privacy is real. It should feel like
+      a trust certificate: clear, confident, beautiful.
+    - Header: "Sealed hardware verified", plus "Encrypted to the sealed
+      AI's key".
+    - Section 1, "The AI" (6 checks, each with a tick):
+        - The proof is fresh, made just now for this app
+        - The AI runs on sealed hardware (detail: 3 sealed servers)
+        - NVIDIA confirms the GPUs are genuine and locked
+        - Intel confirms the CPU enclave is genuine and up to date
+        - The key that signs replies lives inside that enclave
+        - The software inside matches its published measurements
+    - Section 2, "This reply" (3 checks):
+        - The reply was signed inside the sealed hardware
+        - Your words reached the AI unchanged
+        - The reply reached you unchanged
+    - Each check can open to show a small technical line in monospace.
+    - State variants: "Checking with Intel…" (in progress), and FAILED
+      ("✗ Verification failed: don't trust this", in red).
+
+15. Contraction log
+    - "Recorded (14)". A table with columns Started / Lasted / Apart, for
+      example 4:02 PM · 58 s · 5.1 min.
+    - Buttons: "Undo last" and "Clear".
+    - A simple chart of gaps getting shorter over time would be a strong
+      extra.
+    - "Your contractions are stored only on this phone."
+    - Variant: the confirm dialog "Delete every contraction recorded on this
+      phone?" with Cancel and Delete.
+
+16. Settings
+    - The same fields as setup steps 1 to 3, on one scrolling page, with a
+      "Save" button.
+    - "Delete all my data" at the bottom.
+
+
+5. DESIGN-SYSTEM PAGE (1 page)
+------------------------------
+- Colours: background, surface, text, muted text, lines, brand, and the
+  four stage colours. Light and dark mode.
+- Type scale: big headline, headline, body, small, and monospace for the
+  proof details.
+- Components: big timer button (off and on), stage card (4 stages),
+  primary and secondary buttons, chip (off and on), input field, Yes/No
+  toggle, verified badge (pass and fail), chat bubbles, bottom sheet,
+  dialog.
+- Logo and app icon. The current one is a placeholder.
+- Icons: mic, lock or shield, chat, settings, phone, message, warning.
+
+
+6. DARK MODE (if time allows)
+-----------------------------
+Labour often starts at night, so dark versions of screens 5 to 10 would be
+valuable. Do these after the 16 light screens are finished.
+
+
+7. RULES
+--------
+- Use the real wording above. It has been checked for safety and tone.
+  Small rewording is fine, but don't change the meaning of any warning or
+  health text.
+- All names and numbers are fictional sample data (St Mary's, Sam, the
+  times). Don't use real people's names.
+- No ads, no account or login, no sign-up. There is none in the app.
+- Keep the "does not replace your midwife or doctor" line visible on home.
+- Use system fonts or Google Fonts only, so the build can match them.
+- It is a web app shown at phone width. On a laptop it is the same
+  phone-width column, centred.
+
+
+8. WHAT TO SEND BACK
+--------------------
+- A Figma link with view access, with the 16 screens named and numbered as
+  above (for example "05 Home – empty").
+- The design-system page.
+- Any notes on animation, for example the timer button pulse and stage
+  colour changes.

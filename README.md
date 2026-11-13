@@ -42,6 +42,41 @@ Then, for every reply:
 
 Messages are sealed to that same attested key, so only the enclave can read them. If our server altered anything, a check fails and the app says so. The checks are in [app/src/verify.ts](app/src/verify.ts); encryption is in [app/src/e2ee.ts](app/src/e2ee.ts).
 
+## Minimal proof (no app, no server)
+
+One end-to-end encrypted completion plus attestation verification with a fresh nonce, using the same code as the app ([scripts/proof.ts](scripts/proof.ts)):
+
+```sh
+cd app && npm install
+node --env-file=../.env ../scripts/proof.ts
+```
+
+Output from a live run (13 Nov 2026):
+
+```
+Model: Qwen/Qwen3.8-27B
+Nonce: 3a977f4086d1872583a79313716f9cfdf2eedf585e8f665c827b99f9f0a77e6e
+
+Sealed hardware
+  PASS  The proof is fresh, made just now for this app
+  PASS  The AI runs on sealed hardware  (1 sealed server for Qwen/Qwen3.8-27B)
+  PASS  NVIDIA confirms the GPUs are genuine and locked  (8 GPU(s) checked by NVIDIA)
+  PASS  Intel confirms the CPU enclave is genuine and up to date  (UpToDate)
+  PASS  The key that signs replies lives inside that enclave
+  PASS  The software inside matches its published measurements
+
+Question: Contractions are 6 minutes apart. Should I leave yet? Answer in one sentence.
+Reply:    Please call your midwife now to confirm if it is time to head to the hospital.
+
+This reply
+  PASS  The reply was signed inside the sealed hardware  (89154a43a47684742c3d1753252bb6f49f61da9d8c84fc9b1def2df130cb2d93)
+  PASS  Your words reached the AI unchanged
+  PASS  The reply reached you unchanged
+  PASS  Only ciphertext crossed the network
+
+VERIFIED · 55 in / 19 out tokens
+```
+
 ## Testing
 
 - **Decision rules:** 36 tests, including realistic labours generated with uneven timing: false labour (Braxton Hicks), early labour that stalls, uneven 4-6 minute gaps, a missed tap, a contraction stopped early by mistake, a long pause, a fast second baby, journeys from 10 to 90 minutes, and every warning sign. A missed tap never restarts the count, because that would delay leaving.
@@ -92,6 +127,7 @@ app/      React + Vite web app
   src/commands.ts        what a spoken phrase means: start, stop or a question
 server/   Node server (no dependencies): key, limits, NEAR AI Cloud calls
 evals/    live companion eval: 24 cases, code-checked
+scripts/proof.ts   the minimal proof: one encrypted completion + every attestation check
 ```
 
 ## License
