@@ -11,9 +11,10 @@ In the last weeks of pregnancy, it's hard to tell when contractions mean it's ti
 ## What it does
 
 - **Timer:** tap when a contraction starts and stops (or press the space bar).
-- **Hands-free voice:** switch voice on and say "now" when a contraction starts and "stop" when it ends, or just ask a question. Speech is transcribed by Whisper inside NEAR AI Cloud's TEE; silence is never sent. Verified replies are read aloud with an on-device voice only.
+- **Hands-free voice:** switch voice on and say "now" when a contraction starts and "stop" when it ends, or just ask a question. Speech is transcribed by Whisper inside NEAR AI Cloud's TEE; silence is never sent. Verified replies are read aloud with an on-device voice only. Honest limit: NEAR AI Cloud's end-to-end encryption covers chat, not audio, so short voice clips pass through our server in the clear on their way to Whisper. The server holds each clip in memory for that one request and never stores or logs it; a spoken question is then sealed like a typed one before it reaches the companion.
 - **"Leave by 4:36 PM":** fixed rules check whether her midwife's rule (5-1-1 by default) has held long enough. If not yet, a trend line forecasts when it will. Lullwatch subtracts her journey time to give a leave-by time, and says "start packing" two hours before.
 - **Tell her partner, call her midwife:** when it's time, one tap opens her own messaging app with the text written ("It's time to leave for St Mary's. Please come now."), and another calls her midwife. No SMS service or server is involved, and the text says only where and when, never her health details.
+- **What to say when you call:** tapping "Call midwife" opens a short script for the phone call, written by the sealed AI from her timer ("This is my first baby. My contractions are about 5 minutes apart and last about 60 seconds. I've been timing them for an hour."). It's signed and verified like every reply, and plain code checks that every number in it came from the timer and that it adds nothing she didn't record (weeks, waters, bleeding). If a check fails or the AI is unreachable, a fixed script built on her phone is shown instead. At "Go now" the button dials straight away.
 - **Warning signs come first:** waters breaking, bleeding, the baby moving less and other red flags turn the screen to "Go now", whatever the count says.
 - **Ask Lullwatch:** a short, calm AI companion (Qwen3.8-27B on NEAR AI Cloud, thinking off) that explains the numbers and helps with breathing or packing. It is never allowed to change the decision.
 - **End-to-end encrypted:** her browser seals every message to the model's attested key (X25519 + XChaCha20-Poly1305, NEAR AI Cloud E2EE v2). Our server relays ciphertext only and refuses plain text.
@@ -96,7 +97,7 @@ VERIFIED · 55 in / 19 out tokens
 
 - Contractions are stored only on her phone (browser storage). Sample data is never stored.
 - The model sees the timer's summary (stage, average gap and length, leave-by time), not the raw log.
-- The server keeps the API key, rate limits and a spending cap. It only ever sees ciphertext, and records only token counts and dollars.
+- The server keeps the API key, rate limits and a spending cap. For chat it only ever sees ciphertext; voice clips pass through unencrypted for one request and are never stored (see Hands-free voice above). It records only token counts and dollars.
 - Each visit uses fresh encryption keys, so nothing links one session's questions to another's.
 
 ## Run it

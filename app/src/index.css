@@ -270,6 +270,16 @@ h1, h2 { font-weight: 700; letter-spacing: -0.02em; }
 .flag .box { display: grid; place-items: center; width: 20px; height: 20px; flex: none; border-radius: 6px; border: 1.5px solid #c7cfce; font-weight: 700; font-size: 0.72rem; }
 .flag.on { background: var(--alarm-bg); color: var(--alarm); font-weight: 600; }
 .flag.on .box { background: var(--alarm); border-color: var(--alarm); color: #fff; }
+.script {
+  margin: 0; padding: 14px 16px; border-radius: 12px; background: var(--brand-tint); border-left: 3px solid var(--brand);
+  font-size: 1.08rem; line-height: 1.55; font-weight: 500; color: var(--ink);
+}
+.script.writing { display: flex; gap: 10px; align-items: center; font-size: 0.92rem; color: var(--muted); border-left-color: var(--line); background: var(--surface-2); }
+.also { font-size: 0.86rem; color: var(--ink-2); }
+.also b { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); }
+.also ul { margin: 6px 0 0; padding-left: 18px; line-height: 1.6; }
+.call-now { display: inline-flex; justify-content: center; align-items: center; gap: 8px; text-decoration: none; }
+button.action { border: 0; font: inherit; font-weight: 600; font-size: 0.88rem; }
 @keyframes rise { from { transform: translateY(32px); opacity: 0; } }
 @keyframes fade { from { opacity: 0; } }
 

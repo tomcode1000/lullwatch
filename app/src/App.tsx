@@ -11,7 +11,10 @@ import {
 } from "./engine/labour";
 import { defaultProfile, emptyState, load, save, wipe, type Profile, type State } from "./store";
 import { sampleLabour, sampleProfile } from "./sample";
-import { Ask, ProofView, timerContext, usePrivacy, type AskFn, type Privacy } from "./Ask";
+import { Ask, Proof, ProofView, timerContext, usePrivacy, type AskFn, type Privacy } from "./Ask";
+import { askCompanion } from "./companion";
+import { CALL_REQUEST, callFacts, factsText, numbersCheck, templateScript, type CallFacts } from "./call";
+import type { Check } from "./verify";
 import { Voice } from "./Voice";
 import { partnerMessage, smsLink, telLink } from "./contact";
 import { Icon } from "./Icon";
@@ -93,6 +96,7 @@ function Main({
   // ?proof opens the privacy proof and runs it straight away, for judges and the demo.
   const [tab, setTab] = useState<Tab>(params.has("proof") ? "proof" : "timer");
   const [sheet, setSheet] = useState(false);
+  const [call, setCall] = useState(false);
   const privacy = usePrivacy();
   const askRef = useRef<AskFn | null>(null);
 
@@ -165,7 +169,7 @@ function Main({
             </p>
           )}
 
-          <StageCard advice={advice} now={now} profile={profile} />
+          <StageCard advice={advice} now={now} profile={profile} onCall={() => setCall(true)} />
 
           <TimerButton state={state} now={now} onToggle={toggle} />
 
@@ -244,6 +248,16 @@ function Main({
         ))}
       </nav>
 
+      {call && (
+        <CallSheet
+          privacy={privacy}
+          phone={profile.midwifePhone}
+          facts={callFacts(state.contractions, advice, profile.firstBaby)}
+          context={timerContext(advice, profile.rule, profile.firstBaby, Date.now())}
+          onClose={() => setCall(false)}
+        />
+      )}
+
       {sheet && (
         <FlagsSheet
           flags={state.flags}
@@ -297,7 +311,7 @@ const EYEBROW: Record<Advice["stage"], string> = {
   "go-now": "Warning sign",
 };
 
-function StageCard({ advice, now, profile }: { advice: Advice; now: number; profile: Profile }) {
+function StageCard({ advice, now, profile, onCall }: { advice: Advice; now: number; profile: Profile; onCall: () => void }) {
   const where = profile.hospital.trim() || "the hospital";
   const message = partnerMessage(advice, profile.hospital, now);
   const steps: Advice["stage"][] = ["waiting", "pack", "leave"];
@@ -330,12 +344,20 @@ function StageCard({ advice, now, profile }: { advice: Advice; now: number; prof
             : advice.reason}
       </p>
 
-      {(message || advice.stage !== "waiting") && (profile.partnerPhone || profile.midwifePhone) && (
+      {(message || advice.stage !== "waiting") && (
         <div className="actions">
-          {advice.stage !== "waiting" && profile.midwifePhone && (
-            <a className={`action ${advice.stage === "go-now" ? "urgent" : ""}`} href={telLink(profile.midwifePhone)}>
+          {advice.stage === "go-now" && profile.midwifePhone ? (
+            // Urgent: dial straight away, no extra step.
+            <a className="action urgent" href={telLink(profile.midwifePhone)}>
               <Icon name="phone" size={18} /> Call midwife
             </a>
+          ) : (
+            advice.stage !== "go-now" &&
+            advice.stage !== "waiting" && (
+              <button className="action" onClick={onCall}>
+                <Icon name="phone" size={18} /> {profile.midwifePhone ? "Call midwife" : "What to say"}
+              </button>
+            )
           )}
           {message && profile.partnerPhone && (
             <a className="action soft" href={smsLink(profile.partnerPhone, message)}>
@@ -408,6 +430,84 @@ function GapChart({ contractions, rule, tall = false }: { contractions: Contract
         <span className="muted">oldest → newest</span>
       </figcaption>
     </figure>
+  );
+}
+
+function CallSheet({
+  privacy,
+  phone,
+  facts,
+  context,
+  onClose,
+}: {
+  privacy: Privacy;
+  phone?: string;
+  facts: CallFacts;
+  context: string;
+  onClose: () => void;
+}) {
+  const [script, setScript] = useState<{ by: "writing" | "ai" | "phone"; text: string; checks?: Check[] }>({ by: "writing", text: "" });
+
+  // Written once when the sheet opens, from the numbers at that moment.
+  useEffect(() => {
+    let live = true;
+    (async () => {
+      try {
+        const s = await privacy.ensure();
+        const { reply, checks } = await askCompanion(s, `${context}\n\nCALL FACTS:\n${factsText(facts)}`, [{ role: "user", content: CALL_REQUEST }]);
+        privacy.setLastReply(checks);
+        const text = reply.trim().replace(/^["“]|["”]$/g, "");
+        const ok = checks.every((c) => c.pass) && numbersCheck(text, facts);
+        if (live) setScript(ok ? { by: "ai", text, checks } : { by: "phone", text: templateScript(facts) });
+      } catch {
+        if (live) setScript({ by: "phone", text: templateScript(facts) });
+      }
+    })();
+    return () => {
+      live = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return (
+    <div className="sheet-back" onClick={onClose}>
+      <div className="sheet" role="dialog" aria-modal="true" aria-labelledby="call-title" onClick={(e) => e.stopPropagation()}>
+        <div className="grab" aria-hidden />
+        <div className="sheet-head">
+          <h2 id="call-title">What to say when you call</h2>
+          <button className="icon-btn" onClick={onClose} aria-label="Close">
+            <Icon name="close" />
+          </button>
+        </div>
+        <p className="muted">Read this out when the maternity unit answers.</p>
+        {script.by === "writing" ? (
+          <div className="script writing">
+            <span className="tick spin" aria-hidden /> Writing it inside sealed hardware…
+          </div>
+        ) : (
+          <blockquote className="script">{script.text}</blockquote>
+        )}
+        {script.by === "ai" && script.checks && <Proof checks={script.checks} label="Written in sealed hardware · verified" />}
+        {script.by === "phone" && <p className="muted small">Written on this phone from your timer.</p>}
+        <div className="also">
+          <b>They may also ask</b>
+          <ul>
+            <li>How many weeks pregnant you are</li>
+            <li>Whether your waters have broken</li>
+            <li>Whether the baby is moving as usual</li>
+          </ul>
+        </div>
+        {phone ? (
+          <a className="primary call-now" href={telLink(phone)}>
+            <Icon name="phone" size={18} /> Call midwife now
+          </a>
+        ) : (
+          <button className="primary" onClick={onClose}>
+            Done
+          </button>
+        )}
+      </div>
+    </div>
   );
 }
 

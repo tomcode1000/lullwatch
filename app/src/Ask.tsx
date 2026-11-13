@@ -311,14 +311,21 @@ export function ProofView({ privacy, onAsk }: { privacy: Privacy; onAsk: () => v
           <li>
             <Icon name="lock" />
             <span>
-              <b>Questions and voice</b> are encrypted or understood inside sealed hardware. Only the sealed AI can read
-              them.
+              <b>Questions</b> are encrypted on this phone. Only the sealed AI can read them; our server passes on
+              scrambled text.
+            </span>
+          </li>
+          <li>
+            <Icon name="mic" />
+            <span>
+              <b>Voice clips</b> are turned into words inside sealed hardware. They pass through our server on the way,
+              unencrypted, and are never stored.
             </span>
           </li>
           <li>
             <Icon name="server" />
             <span>
-              <b>Our server</b> passes on scrambled text and keeps nothing after a reply.
+              <b>Our server</b> keeps nothing after a reply: no questions, no answers, no audio.
             </span>
           </li>
         </ul>
