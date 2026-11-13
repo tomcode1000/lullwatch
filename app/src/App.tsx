@@ -155,7 +155,7 @@ function Main({
         <div hidden={tab !== "timer"} className="tab">
           {state.sample && (
             <p className="banner">
-              <span>Sample data: a fictional labour, for trying the app.</span>
+              <span>Sample data: a fictional labour</span>
               <button
                 className="link"
                 onClick={() => setState((s) => ({ ...s, contractions: [], running: null, flags: [], sample: false }))}
@@ -312,27 +312,23 @@ function StageCard({ advice, now, profile }: { advice: Advice; now: number; prof
           ))}
         </ol>
       </div>
-      <h1>{HEADLINE[advice.stage]}</h1>
-      <p className="reason">{advice.reason}</p>
-
-      {advice.stage === "go-now" ? (
-        <p className="leave">
-          <span className="leave-label">Head to {where} or call your midwife or emergency number now.</span>
-        </p>
-      ) : advice.leaveBy !== null ? (
-        advice.leaveBy <= now ? (
-          <p className="leave">
-            <span className="leave-label">Leave for {where}</span>
-            <span className="leave-time">Now</span>
-          </p>
-        ) : (
+      <div className="stage-main">
+        <h1>{HEADLINE[advice.stage]}</h1>
+        {advice.stage !== "go-now" && advice.leaveBy !== null && (
           <p className="leave">
             <span className="leave-label">Leave for {where} by</span>
-            <span className="leave-time">{clock(advice.leaveBy)}</span>
-            <span className="leave-in">in {span(advice.leaveBy - now)}</span>
+            <span className="leave-time">{advice.leaveBy <= now ? "Now" : clock(advice.leaveBy)}</span>
+            {advice.leaveBy > now && <span className="leave-in">in {span(advice.leaveBy - now)}</span>}
           </p>
-        )
-      ) : null}
+        )}
+      </div>
+      <p className="reason">
+        {advice.stage === "go-now"
+          ? `${advice.reason.replace(/ Go to the hospital or call now\.$/, "")} Head to ${where} or call your midwife or emergency number now.`
+          : advice.leaveBy !== null
+            ? advice.reason
+            : advice.reason}
+      </p>
 
       {(message || advice.stage !== "waiting") && (profile.partnerPhone || profile.midwifePhone) && (
         <div className="actions">
