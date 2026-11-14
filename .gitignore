@@ -2,3 +2,10 @@
 .env.*
 node_modules/
 dist/
+video/take/
+video/stills/
+video/*.mp4
+video/*.wav
+video/*.m4a
+video/*.mp3
+video/qa/

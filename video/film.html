@@ -1,0 +1,351 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Lullwatch film</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" />
+<style>
+  /* The landing page's own tokens (app/src/index.css + landing.css) */
+  :root {
+    --night: #061416; --night-2: #0a2224; --on-night: #eaf3f2; --on-night-2: #a9c4c2;
+    --brand: #0d5b5e; --glow: #7fd3cb; --ok: #10805b; --ok-l: #4cc28f; --alarm: #e4574c; --pack: #f0c66b;
+    --serif: "Instrument Serif", Georgia, serif; --sans: "Inter", system-ui, sans-serif; --mono: "JetBrains Mono", monospace;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  html, body { width: 1920px; height: 1080px; overflow: hidden; background: var(--night); color: var(--on-night); font-family: var(--sans); -webkit-font-smoothing: antialiased; }
+  .scene { position: absolute; inset: 0; overflow: hidden; display: none; }
+  .m { will-change: transform, opacity; }
+  .abs { position: absolute; }
+
+  /* graded photo (the social-graphic pipeline) */
+  .art { position: absolute; inset: 0; overflow: hidden; }
+  .photo { position: absolute; inset: -4%; background-size: cover; filter: grayscale(1) contrast(1.2) brightness(.6); }
+  .tint { position: absolute; inset: 0; background: linear-gradient(160deg, #0d5b5e, #062b2e 70%); mix-blend-mode: color; opacity: .85; }
+  .glow { position: absolute; inset: 0; mix-blend-mode: screen; opacity: .55; background: radial-gradient(40% 50% at 66% 38%, rgb(127 211 203 / .45), transparent 70%); }
+  .shade-l { position: absolute; inset: 0; background: linear-gradient(90deg, var(--night) 0%, rgb(6 20 22 / .9) 34%, rgb(6 20 22 / .25) 64%, rgb(6 20 22 / .5) 100%), linear-gradient(to top, var(--night), transparent 32%); }
+  .shade-c { position: absolute; inset: 0; background: radial-gradient(70% 90% at 50% 50%, rgb(6 20 22 / .6), var(--night)); }
+  .field { position: absolute; inset: 0; background: radial-gradient(60% 70% at 30% 50%, #0b2a2c 0%, var(--night) 70%); }
+  .grain { position: absolute; inset: 0; width: 100%; height: 100%; opacity: .08; mix-blend-mode: overlay; }
+
+  .kicker { font-family: var(--mono); font-size: 22px; letter-spacing: .16em; text-transform: uppercase; color: var(--glow); }
+  .serif { font-family: var(--serif); font-weight: 400; letter-spacing: -.015em; line-height: .98; }
+  .serif em { font-style: italic; color: var(--glow); }
+  .muted { color: var(--on-night-2); }
+  .src { font-family: var(--mono); font-size: 17px; letter-spacing: .04em; color: #7f9d9b; }
+
+  /* research */
+  .tabrow { display: flex; gap: 14px; }
+  .tab { font-family: var(--mono); font-size: 22px; letter-spacing: .14em; padding: 10px 20px; border-radius: 999px; border: 1px solid rgb(127 211 203 / .25); color: var(--on-night-2); }
+  .tab.on { background: rgb(127 211 203 / .14); color: var(--glow); border-color: rgb(127 211 203 / .55); }
+  .bars { display: flex; flex-direction: column; gap: 34px; width: 700px; }
+  .barrow .lab { display: flex; justify-content: space-between; font-size: 26px; margin-bottom: 12px; color: var(--on-night); }
+  .barrow .lab b { font-family: var(--serif); font-weight: 400; font-size: 54px; line-height: 1; }
+  .track { height: 22px; border-radius: 11px; background: rgb(255 255 255 / .07); overflow: hidden; }
+  .fill { height: 100%; border-radius: 11px; transform-origin: left; }
+  .tiles { display: grid; grid-template-columns: repeat(5, 92px); gap: 18px; }
+  .tile { width: 92px; height: 92px; border-radius: 22px; background: linear-gradient(160deg, #1c3a3c, #102627); border: 1px solid rgb(127 211 203 / .18); position: relative; display: grid; place-items: center; }
+  .tile i { width: 34px; height: 34px; border-radius: 10px; background: rgb(127 211 203 / .25); display: block; }
+  .tile .x { position: absolute; inset: 0; border-radius: 22px; background: linear-gradient(160deg, #b8392f, #7d1f19); opacity: 0; display: grid; place-items: center; font-family: var(--mono); font-size: 40px; color: #fff; }
+  .verdict { width: 720px; padding: 40px 44px; border-radius: 28px; background: rgb(6 20 22 / .7); border: 1px solid rgb(127 211 203 / .22); box-shadow: 0 40px 80px -30px rgb(0 0 0 / .7); }
+
+  /* frames */
+  .browser { position: absolute; left: 180px; top: 54px; width: 1560px; border-radius: 16px; overflow: hidden; background: #0d1718; box-shadow: 0 50px 100px -30px rgb(0 0 0 / .75), 0 0 0 1px rgb(255 255 255 / .08); transform-origin: 50% 40%; }
+  .bar { height: 46px; display: flex; align-items: center; gap: 9px; padding: 0 18px; background: #1b2526; }
+  .bar i { width: 13px; height: 13px; border-radius: 50%; background: #3b4748; display: block; }
+  .bar i:nth-child(1) { background: #ec6a5e; } .bar i:nth-child(2) { background: #f4bf4f; } .bar i:nth-child(3) { background: #61c554; }
+  .url { margin-left: 18px; flex: 1; max-width: 640px; height: 30px; border-radius: 8px; background: #0f1a1b; color: #9fb3b1; font-size: 17px; display: flex; align-items: center; padding: 0 14px; gap: 8px; }
+  .browser .cap { display: block; width: 1560px; height: 877.5px; object-fit: cover; }
+  .phone { position: absolute; left: 404px; top: 52px; width: 432px; height: 914px; border-radius: 64px; padding: 14px; background: linear-gradient(160deg, #263334, #0b1213); box-shadow: inset 0 0 0 2px rgb(255 255 255 / .08), 0 60px 120px -30px rgb(0 0 0 / .85), 0 0 0 1px #000; }
+  .screen { position: relative; width: 404px; height: 874.6px; border-radius: 50px; overflow: hidden; background: #f6f7f6; }
+  .screen .cap { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .halo { position: absolute; left: 120px; top: 60px; width: 1000px; height: 960px; background: radial-gradient(closest-side, rgb(19 112 118 / .35), transparent); }
+
+  /* callouts */
+  .col { position: absolute; left: 1000px; top: 150px; width: 800px; }
+  .col .serif.title { font-size: 104px; margin: 22px 0 36px; }
+  .item { font-size: 34px; line-height: 1.3; margin: 0 0 22px; color: var(--on-night); display: flex; gap: 18px; align-items: baseline; }
+  .item .dot { width: 12px; height: 12px; border-radius: 50%; background: var(--glow); flex: none; transform: translateY(-4px); }
+  .item.ok .dot { background: var(--ok-l); }
+  .note { font-size: 28px; line-height: 1.4; padding: 22px 26px; border-radius: 18px; background: rgb(127 211 203 / .1); border: 1px solid rgb(127 211 203 / .3); color: var(--on-night); margin: 6px 0 22px; }
+  .note b { font-family: var(--serif); font-weight: 400; font-size: 40px; color: var(--glow); }
+  .check { font-family: var(--mono); color: var(--ok-l); }
+
+  /* transitions + captions */
+  .wipe { position: absolute; inset: -10px; background: linear-gradient(90deg, #0a4a4d, #137076 50%, #0a4a4d); z-index: 50; transform: translateX(-110%); }
+  #cc { position: absolute; left: 0; right: 0; bottom: 30px; text-align: center; z-index: 60; }
+  #cc span { display: inline-block; max-width: 1500px; font-size: 34px; font-weight: 600; line-height: 1.3; padding: 8px 22px 10px; border-radius: 12px; background: rgb(6 20 22 / .72); color: #fff; letter-spacing: -.005em; }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute">
+  <filter id="grain"><feTurbulence type="fractalNoise" baseFrequency=".85" numOctaves="2" stitchTiles="stitch" /><feColorMatrix type="saturate" values="0" /></filter>
+  <symbol id="logo" viewBox="0 0 32 32"><circle cx="16" cy="16" r="15" fill="#137076" /><path d="M6 18c3-6 5-6 7 0s4 6 7 0 4-6 6 0" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" /></symbol>
+</svg>
+
+<!-- 1. Our first pregnancy: "Is this it?" -->
+<section class="scene" data-in="0" data-out="15.4">
+  <div class="art cam" data-z0="1.0" data-z1="1.09"><div class="photo" style="background-image:url(../app/public/art/hero.jpg);background-position:68% 28%"></div><div class="tint"></div><div class="glow"></div><div class="shade-l"></div><svg class="grain"><rect width="100%" height="100%" filter="url(#grain)" /></svg></div>
+  <div class="abs" style="left:150px;top:300px;width:1000px">
+    <p class="kicker m" data-in=".4" data-out="8.6" data-a="up">Our first pregnancy</p>
+    <p class="serif m" data-in=".8" data-out="8.6" data-a="kin" style="font-size:92px;margin-top:26px">My wife and I built <em>Lullwatch.</em></p>
+    <p class="m muted" data-in="4.0" data-out="8.6" data-a="up" style="font-size:36px;line-height:1.4;margin-top:30px;max-width:780px">When the contractions started, we had one question.</p>
+  </div>
+  <div class="abs" style="left:150px;top:290px;width:1100px">
+    <p class="serif m" data-in="8.9" data-out="15.2" data-a="kin" style="font-size:210px">Is this <em>it?</em></p>
+    <p class="serif m" data-in="11.1" data-out="15.2" data-a="up" style="font-size:78px;margin-top:20px;color:var(--on-night-2)">Go now, or wait?</p>
+    <p class="kicker m" data-in="12.4" data-out="15.2" data-a="up" style="margin-top:52px">One of the hardest calls in late pregnancy</p>
+  </div>
+</section>
+
+<!-- 2. Too early / too late, with the First Baby Study -->
+<section class="scene" data-in="15.3" data-out="36.0">
+  <div class="field"></div><svg class="grain"><rect width="100%" height="100%" filter="url(#grain)" /></svg>
+  <div class="abs tabrow" style="left:150px;top:110px">
+    <span class="tab m" data-in="15.5" data-out="36" data-a="pop" id="tEarly">Too early</span>
+    <span class="tab m" data-in="15.7" data-out="36" data-a="pop" id="tLate">Too late</span>
+  </div>
+  <div class="abs" style="left:150px;top:210px;width:1620px">
+    <p class="serif m" data-in="16.6" data-out="32.4" data-a="up" style="font-size:96px">Too early, and she's <em>sent home.</em></p>
+    <p class="src m" data-in="18.2" data-out="32.4" data-a="up" style="margin-top:22px;font-size:20px">FIRST BABY STUDY · 1,656 FIRST-TIME MOTHERS · 52 US HOSPITALS</p>
+  </div>
+  <div class="abs m" data-in="21.1" data-out="32.4" data-a="up" style="left:150px;top:470px;width:700px">
+    <p class="serif" style="font-size:250px;line-height:.85"><span class="count" data-cin="21.2" data-cdur=".5" data-to="1" data-dec="0">1</span> in 3</p>
+    <p style="font-size:36px;line-height:1.35;margin-top:28px">went in before contractions were <span class="m" data-in="24.0" data-a="mark" style="color:var(--glow)">5 minutes apart</span></p>
+  </div>
+  <div class="abs m" data-in="27.9" data-out="32.4" data-a="up" style="left:1000px;top:500px">
+    <p class="kicker" style="margin-bottom:30px">Ended in a caesarean</p>
+    <div class="bars">
+      <div class="barrow"><div class="lab"><span>Went in early</span><b><span class="count" data-cin="29.3" data-cdur="1.0" data-to="24.0" data-dec="1">0</span>%</b></div><div class="track"><div class="fill m" data-in="29.3" data-d="1.0" data-a="grow" data-to=".96" style="background:linear-gradient(90deg,#c9573f,#e8866a)"></div></div></div>
+      <div class="barrow"><div class="lab"><span>Waited</span><b><span class="count" data-cin="31.4" data-cdur="1.0" data-to="15.7" data-dec="1">0</span>%</b></div><div class="track"><div class="fill m" data-in="31.4" data-d="1.0" data-a="grow" data-to=".628" style="background:linear-gradient(90deg,#137076,#7fd3cb)"></div></div></div>
+    </div>
+  </div>
+  <div class="abs" style="left:150px;top:330px;width:1600px">
+    <p class="serif m" data-in="32.5" data-out="35.9" data-a="kin" style="font-size:120px">Too late, and the journey<br />becomes <em>the risk.</em></p>
+  </div>
+  <p class="src abs m" data-in="18.4" data-out="32.4" data-a="fade" style="left:150px;bottom:110px">Source: Timing of hospital admission at first childbirth, First Baby Study (PMC9934383). An association, not proof of cause.</p>
+</section>
+
+<!-- 3. The apps that could help -->
+<section class="scene" data-in="35.9" data-out="55.1">
+  <div class="field"></div><svg class="grain"><rect width="100%" height="100%" filter="url(#grain)" /></svg>
+  <div class="abs" style="left:150px;top:110px;width:1620px">
+    <p class="kicker m" data-in="36.1" data-out="54.9" data-a="up">So we looked for an app</p>
+    <p class="serif m" data-in="37.8" data-out="54.9" data-a="kin" style="font-size:88px;margin-top:22px">They want the <em>most private data there is.</em></p>
+  </div>
+  <div class="abs m" data-in="41.6" data-out="54.9" data-a="up" style="left:150px;top:380px">
+    <div class="tiles" id="tiles"></div>
+  </div>
+  <div class="abs m" data-in="45.0" data-out="54.9" data-a="up" style="left:760px;top:390px;width:300px">
+    <p class="serif" style="font-size:150px;line-height:.85">18<span style="color:var(--on-night-2);font-size:70px"> of 25</span></p>
+    <p style="font-size:28px;line-height:1.4;margin-top:20px;color:var(--on-night-2)">pregnancy and period apps got Mozilla's privacy warning</p>
+    <p class="src" style="margin-top:22px">MOZILLA *PRIVACY NOT INCLUDED, 2022</p>
+  </div>
+  <div class="abs verdict m" data-in="47.3" data-out="54.9" data-a="pop" style="left:1100px;top:390px">
+    <p class="kicker">August 2025 · US federal jury</p>
+    <p class="serif" style="font-size:92px;margin-top:20px">Meta found <em>liable</em></p>
+    <p class="m" data-in="51.0" data-a="up" style="font-size:30px;line-height:1.45;margin-top:24px">for collecting Flo app users' data without consent, including pregnancy data.</p>
+    <p class="src" style="margin-top:24px">FRASCO V. FLO HEALTH · N.D. CAL.</p>
+  </div>
+</section>
+
+<!-- 4. Logo sting -->
+<section class="scene" data-in="55.0" data-out="56.6">
+  <div class="field"></div>
+  <div class="abs m" data-in="55.1" data-out="56.6" data-a="pop" style="left:0;right:0;top:400px;text-align:center">
+    <svg width="150" height="150"><use href="#logo" /></svg>
+    <p class="serif" style="font-size:120px;margin-top:20px">Lullwatch</p>
+  </div>
+</section>
+
+<!-- 5. The live landing page -->
+<section class="scene" data-in="56.4" data-out="66.1">
+  <div class="field"></div>
+  <div class="browser cam" data-z0="1.0" data-z1="1.03"><div class="bar"><i></i><i></i><i></i><div class="url">🔒 lullwatch.54-255-109-186.sslip.io</div></div><img class="cap" data-take="l1" /></div>
+</section>
+
+<!-- 6. The app, live on a phone -->
+<section class="scene" data-in="66.0" data-out="142.5">
+  <div class="field" style="background:radial-gradient(55% 75% at 30% 50%, #0d3133 0%, var(--night) 72%)"></div><svg class="grain"><rect width="100%" height="100%" filter="url(#grain)" /></svg>
+  <div class="halo"></div>
+  <div class="phone"><div class="screen">
+    <img class="cap m" data-take="a" data-in="66.0" data-out="89.0" data-a="fade" data-d=".25" />
+    <img class="cap m" data-take="b" data-in="88.9" data-out="102.8" data-a="fade" data-d=".25" />
+    <img class="cap m" data-take="c" data-in="102.7" data-out="115.4" data-a="fade" data-d=".25" />
+    <img class="cap m" data-take="d" data-in="115.3" data-out="125.7" data-a="fade" data-d=".25" />
+    <img class="cap m" data-take="e" data-in="125.6" data-out="142.5" data-a="fade" data-d=".25" />
+  </div></div>
+
+  <div class="col m" data-in="66.1" data-out="77.7" data-a="up">
+    <p class="kicker">Setup</p>
+    <p class="serif title">Three questions.</p>
+    <p class="item m" data-in="68.3" data-a="left"><span class="dot"></span>First baby?</p>
+    <p class="item m" data-in="69.3" data-a="left"><span class="dot"></span>Which hospital?</p>
+    <p class="item m" data-in="70.9" data-a="left"><span class="dot"></span>How long is the journey?</p>
+    <p class="note m" data-in="73.3" data-a="pop"><b>Standard rule, applied for her</b><br />5 minutes apart · 1 minute long · for 1 hour</p>
+    <p class="item m" data-in="74.7" data-a="left"><span class="dot"></span>Her midwife's numbers win.</p>
+  </div>
+  <div class="col m" data-in="77.9" data-out="88.8" data-a="up">
+    <p class="kicker">Time it</p>
+    <p class="serif title">Tap. <em>Tap again.</em></p>
+    <p class="item m" data-in="83.3" data-a="left"><span class="dot"></span>Or hands-free: say “now” and “stop”</p>
+    <p class="item m" data-in="86.6" data-a="left"><span class="dot"></span>The log never leaves her phone</p>
+  </div>
+  <div class="col m" data-in="89.0" data-out="102.5" data-a="up">
+    <p class="kicker">Know when</p>
+    <p class="serif title">Rules <em>decide</em> when.</p>
+    <p class="item m" data-in="90.4" data-a="left"><span class="dot"></span>Gaps shrinking toward 5 minutes</p>
+    <p class="item m" data-in="91.8" data-a="left"><span class="dot"></span>Fixed rules, 36 tested labours</p>
+    <p class="item m" data-in="94.4" data-a="left"><span class="dot"></span>Forecast when the rule is met</p>
+    <p class="item m" data-in="97.0" data-a="left"><span class="dot"></span>Minus her journey</p>
+    <p class="note m" data-in="99.8" data-a="pop"><b>Start packing. Leave by …</b></p>
+  </div>
+  <div class="col m" data-in="102.7" data-out="115.2" data-a="up">
+    <p class="kicker">The call</p>
+    <p class="serif title">Know <em>what to say.</em></p>
+    <p class="item m" data-in="106.5" data-a="left"><span class="dot"></span>One tap: the script for the call</p>
+    <p class="item ok m" data-in="109.0" data-a="left"><span class="dot"></span>Written in sealed hardware, signed, verified</p>
+    <p class="item ok m" data-in="112.2" data-a="left"><span class="dot"></span>Every number checked against the timer</p>
+  </div>
+  <div class="col m" data-in="115.4" data-out="125.5" data-a="up">
+    <p class="kicker" style="color:#ff9a8f">Warning signs</p>
+    <p class="serif title">Go <em style="color:#ff9a8f">now.</em></p>
+    <p class="item m" data-in="117.2" data-a="left"><span class="dot" style="background:#ff9a8f"></span>Any warning sign overrides the count</p>
+    <p class="item m" data-in="123.7" data-a="left"><span class="dot"></span>Rules decide. The AI explains.</p>
+  </div>
+  <div class="col m" data-in="125.7" data-out="142.4" data-a="up">
+    <p class="kicker">Private by proof</p>
+    <p class="serif title">Checked <em>on her phone.</em></p>
+    <p class="item m" data-in="129.6" data-a="left"><span class="dot"></span>Encrypted on her phone</p>
+    <p class="item m" data-in="131.3" data-a="left"><span class="dot"></span>to a key only the enclave holds</p>
+    <p class="item ok m" data-in="135.8" data-a="left"><span class="check">✓</span>NVIDIA: the GPUs are genuine</p>
+    <p class="item ok m" data-in="138.4" data-a="left"><span class="check">✓</span>Intel: the enclave is up to date</p>
+    <p class="item ok m" data-in="141.0" data-a="left"><span class="check">✓</span>Every reply signed inside it</p>
+  </div>
+</section>
+
+<!-- 7. Landing: Nobody can read it -->
+<section class="scene" data-in="142.4" data-out="149.4">
+  <div class="field"></div>
+  <div class="browser cam" data-z0="1.0" data-z1="1.035"><div class="bar"><i></i><i></i><i></i><div class="url">🔒 lullwatch.54-255-109-186.sslip.io/#privacy</div></div><img class="cap" data-take="l2" /></div>
+</section>
+
+<!-- 8. Verify, not trust / the app we wished we'd had -->
+<section class="scene" data-in="149.2" data-out="155.2">
+  <div class="art cam" data-z0="1.04" data-z1="1.0"><div class="photo" style="background-image:url(../app/public/art/privacy.jpg);background-position:50% 30%"></div><div class="tint"></div><div class="shade-c"></div><svg class="grain"><rect width="100%" height="100%" filter="url(#grain)" /></svg></div>
+  <div class="abs" style="left:0;right:0;top:330px;text-align:center">
+    <p class="kicker m" data-in="149.4" data-out="152.8" data-a="up">Built on NEAR AI Cloud</p>
+    <p class="serif m" data-in="149.3" data-out="152.8" data-a="kin" style="font-size:120px;margin-top:26px">Private AI you can <em>verify,</em><br />not just trust.</p>
+    <p class="serif m" data-in="152.95" data-out="155.1" data-a="kin" style="font-size:120px;margin-top:-40px">The app we <em>wished we'd had.</em></p>
+  </div>
+</section>
+
+<!-- 9. Landing: closing section -->
+<section class="scene" data-in="155.0" data-out="159.0">
+  <div class="field"></div>
+  <div class="browser cam" data-z0="1.0" data-z1="1.03"><div class="bar"><i></i><i></i><i></i><div class="url">🔒 lullwatch.54-255-109-186.sslip.io</div></div><img class="cap" data-take="l3" /></div>
+</section>
+
+<!-- 10. End card -->
+<section class="scene" data-in="158.8" data-out="163">
+  <div class="art cam" data-z0="1.0" data-z1="1.04"><div class="photo" style="background-image:url(../app/public/art/hero.jpg);background-position:62% 25%"></div><div class="tint"></div><div class="shade-c"></div></div>
+  <div class="abs" style="left:0;right:0;top:250px;text-align:center">
+    <div class="m" data-in="158.9" data-a="pop"><svg width="110" height="110"><use href="#logo" /></svg></div>
+    <p class="serif m" data-in="159.0" data-a="kin" style="font-size:170px;margin-top:20px">Know when <em>to go.</em></p>
+    <p class="m" data-in="159.7" data-a="up" style="font-size:34px;margin-top:40px;font-weight:600">lullwatch.54-255-109-186.sslip.io</p>
+    <p class="src m" data-in="160.0" data-a="up" style="margin-top:18px;font-size:21px">GITHUB.COM/TOMCODE1000/LULLWATCH · BUILT AT NEAR HACKATHON 2026 · TRACK 03 PRIVACY &amp; PRIVATE AI</p>
+  </div>
+</section>
+
+<div class="wipe" data-at="55.0"></div>
+<div class="wipe" data-at="66.05"></div>
+<div class="wipe" data-at="142.45"></div>
+<div id="cc"><span></span></div>
+
+<script>
+const clamp = (x) => Math.max(0, Math.min(1, x));
+const ease = (k) => 1 - Math.pow(1 - k, 3);
+const inout = (k) => (k < .5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2);
+const takes = {}, imgs = {};
+let captions = [];
+
+// research tiles: 25 apps, 18 flagged in a staggered order
+const tiles = document.getElementById('tiles');
+const flagged = new Set([0, 2, 3, 5, 6, 8, 9, 11, 12, 13, 15, 16, 18, 19, 20, 22, 23, 24]);
+for (let i = 0; i < 25; i++) tiles.insertAdjacentHTML('beforeend', `<div class="tile"><i></i>${flagged.has(i) ? `<div class="x" data-i="${[...flagged].indexOf(i)}">!</div>` : ''}</div>`);
+
+// headlines that rise word by word
+document.querySelectorAll('[data-a=kin]').forEach((el) => {
+  const walk = (n) => { [...n.childNodes].forEach((c) => {
+    if (c.nodeType === 3) { const f = document.createDocumentFragment(); c.textContent.split(/(\s+)/).forEach((w) => { if (!w) return; if (/^\s+$/.test(w)) f.append(w); else { const s = document.createElement('span'); s.className = 'w'; s.style.display = 'inline-block'; s.textContent = w; f.append(s); } }); c.replaceWith(f); }
+    else if (c.nodeType === 1 && c.tagName !== 'BR') walk(c);
+  }); };
+  walk(el);
+});
+
+window.ready = (async () => {
+  for (const t of ['a', 'b', 'c', 'd', 'e', 'l1', 'l2', 'l3']) {
+    const j = await (await fetch(`take/${t}/frames.json`)).json();
+    takes[t] = j.frames.map((f) => ({ f: `take/${t}/${f.f}`, t: j.T0 + (f.t - j.wall0 / 1000) }));
+  }
+  captions = await (await fetch('captions.json')).json();
+  await Promise.all(['400 40px "Instrument Serif"', 'italic 400 40px "Instrument Serif"', '600 40px Inter', '400 40px Inter', '400 20px "JetBrains Mono"'].map((f) => document.fonts.load(f)));
+  await document.fonts.ready;
+  return true;
+})();
+
+function frameAt(take, t) {
+  const fr = takes[take]; let lo = 0, hi = fr.length - 1, best = 0;
+  while (lo <= hi) { const mid = (lo + hi) >> 1; if (fr[mid].t <= t) { best = mid; lo = mid + 1; } else hi = mid - 1; }
+  return fr[best].f;
+}
+
+window.render = async (t) => {
+  const waits = [];
+  document.querySelectorAll('.scene').forEach((s) => {
+    const a = +s.dataset.in, b = +s.dataset.out;
+    const on = t >= a - .01 && t < b;
+    s.style.display = on ? 'block' : 'none';
+    if (!on) return;
+    s.style.opacity = Math.min(clamp((t - a) / .35), clamp((b - t) / .35));
+    s.querySelectorAll('.cam').forEach((c) => { const k = inout(clamp((t - a) / (b - a))); const z = +c.dataset.z0 + (+c.dataset.z1 - +c.dataset.z0) * k; c.style.transform = `scale(${z})`; });
+    s.querySelectorAll('img.cap').forEach((img) => {
+      const i0 = +(img.dataset.in || a), o0 = +(img.dataset.out || b);
+      if (t < i0 - .3 || t > o0 + .3) return;
+      const src = frameAt(img.dataset.take, t);
+      if (img.getAttribute('src') !== src) { img.setAttribute('src', src); waits.push(img.decode().catch(() => {})); }
+    });
+    s.querySelectorAll('.m').forEach((el) => {
+      const i = +el.dataset.in, o = el.dataset.out ? +el.dataset.out : 1e9, d = +(el.dataset.d || .7), kind = el.dataset.a || 'fade';
+      const p = ease(clamp((t - i) / d)), q = clamp((o - t) / .35);
+      if (kind === 'grow') { el.style.transform = `scaleX(${p * +el.dataset.to})`; return; }
+      if (kind === 'mark') { el.style.opacity = 1; el.style.textShadow = p > 0 ? `0 0 ${18 * p}px rgb(127 211 203 / ${.6 * p})` : 'none'; return; }
+      if (kind === 'kin') {
+        el.style.opacity = q;
+        el.querySelectorAll('.w').forEach((w, n) => { const k = ease(clamp((t - i - n * .07) / .55)); w.style.opacity = k; w.style.transform = `translateY(${(1 - k) * 46}px)`; w.style.filter = `blur(${(1 - k) * 8}px)`; });
+        return;
+      }
+      el.style.opacity = Math.min(p, q);
+      const r = 1 - p;
+      el.style.transform = kind === 'up' ? `translateY(${r * 34}px)` : kind === 'left' ? `translateX(${r * -36}px)` : kind === 'pop' ? `scale(${.9 + .1 * p})` : '';
+      if (kind === 'up') el.style.filter = r > .01 ? `blur(${r * 6}px)` : 'none';
+    });
+    s.querySelectorAll('.count').forEach((c) => { const k = inout(clamp((t - +c.dataset.cin) / +c.dataset.cdur)); c.textContent = (+c.dataset.to * k).toFixed(+c.dataset.dec); });
+  });
+  // tabs: "too early" until "too late"
+  document.getElementById('tEarly').classList.toggle('on', t < 32.5);
+  document.getElementById('tLate').classList.toggle('on', t >= 32.5);
+  // 18 of 25 flagged, one after another from "18 got its privacy warning"
+  document.querySelectorAll('.tile .x').forEach((x) => { x.style.opacity = ease(clamp((t - 45.1 - +x.dataset.i * .06) / .3)); });
+  // teal wipes cover the cuts
+  document.querySelectorAll('.wipe').forEach((w) => { const at = +w.dataset.at; const k = clamp((t - (at - .42)) / .84); w.style.transform = `translateX(${-110 + 220 * inout(k)}%)`; w.style.display = k > 0 && k < 1 ? 'block' : 'none'; });
+  // captions
+  const c = captions.find((x) => t >= x.s && t < x.e);
+  const cc = document.querySelector('#cc span');
+  cc.textContent = c ? c.text : ''; cc.style.display = c && t < 158.8 ? 'inline-block' : 'none';
+  await Promise.all(waits);
+};
+</script>
+</body>
+</html>

@@ -1,0 +1,303 @@
+1
+00:00:00,000 --> 00:00:02,320
+My wife and I built Lullwatch because of our
+
+2
+00:00:02,320 --> 00:00:03,880
+own first pregnancy.
+
+3
+00:00:03,880 --> 00:00:05,560
+When the contraction started,
+
+4
+00:00:05,580 --> 00:00:08,900
+we had one question and nothing we had could answer it.
+
+5
+00:00:08,900 --> 00:00:09,880
+Is this it?
+
+6
+00:00:09,880 --> 00:00:12,200
+Do we go now or do we wait?
+
+7
+00:00:12,200 --> 00:00:13,660
+We learned that this is one of the hardest
+
+8
+00:00:13,660 --> 00:00:15,420
+calls in late pregnancy.
+
+9
+00:00:15,520 --> 00:00:18,020
+Go in too early and you're sent home.
+
+10
+00:00:18,160 --> 00:00:21,240
+In a study of over 1,600 first-time mothers,
+
+11
+00:00:21,240 --> 00:00:23,260
+one in three went to hospital before their
+
+12
+00:00:23,260 --> 00:00:25,540
+contractions were five minutes apart.
+
+13
+00:00:25,540 --> 00:00:27,860
+Those early arrivals were more likely to end
+
+14
+00:00:27,860 --> 00:00:30,520
+in a caesarean, about one in four,
+
+15
+00:00:30,520 --> 00:00:32,300
+against about one in six,
+
+16
+00:00:32,320 --> 00:00:34,660
+but leave it too late and the journey itself
+
+17
+00:00:34,660 --> 00:00:36,080
+becomes the risk.
+
+18
+00:00:36,080 --> 00:00:37,820
+So we looked for an app to help,
+
+19
+00:00:37,820 --> 00:00:39,780
+but the apps that could help want the most
+
+20
+00:00:39,780 --> 00:00:41,640
+private data there is.
+
+21
+00:00:41,640 --> 00:00:45,140
+When Mozilla reviewed 25 pregnancy and period apps,
+
+22
+00:00:45,140 --> 00:00:47,340
+18 got its privacy warning.
+
+23
+00:00:47,340 --> 00:00:48,760
+And in 2025,
+
+24
+00:00:48,900 --> 00:00:51,160
+a US jury found Meta liable for collecting
+
+25
+00:00:51,160 --> 00:00:54,680
+data from the Flo app, including pregnancy data.
+
+26
+00:00:54,980 --> 00:00:57,260
+So we built Lullwatch, a private labour
+
+27
+00:00:57,260 --> 00:00:59,380
+companion that tells her when to pack and when
+
+28
+00:00:59,380 --> 00:01:00,820
+to leave for the hospital.
+
+29
+00:01:00,860 --> 00:01:04,040
+Its AI runs on sealed hardware on NEAR AI Cloud,
+
+30
+00:01:04,040 --> 00:01:06,020
+and her own phone checks the proof.
+
+31
+00:01:06,080 --> 00:01:07,840
+Setup is three questions.
+
+32
+00:01:07,920 --> 00:01:10,180
+Is this her first baby, which hospital,
+
+33
+00:01:10,180 --> 00:01:12,060
+and how long the journey takes?
+
+34
+00:01:12,280 --> 00:01:14,700
+Lullwatch applies the standard rule for her,
+
+35
+00:01:14,700 --> 00:01:16,760
+if her midwife gave her different numbers,
+
+36
+00:01:16,760 --> 00:01:17,740
+those win.
+
+37
+00:01:17,900 --> 00:01:20,380
+When a contraction starts, she taps.
+
+38
+00:01:20,480 --> 00:01:22,700
+When it ends, she taps again.
+
+39
+00:01:22,800 --> 00:01:26,620
+Or, hands-free, she just says now, and stop.
+
+40
+00:01:26,620 --> 00:01:28,660
+The log never leaves her phone.
+
+41
+00:01:29,080 --> 00:01:31,680
+A few hours in, the gaps are shrinking.
+
+42
+00:01:31,760 --> 00:01:34,420
+Fixed, tested rules watch the trend,
+
+43
+00:01:34,420 --> 00:01:36,980
+forecast when she'll meet her midwife's rule,
+
+44
+00:01:36,980 --> 00:01:39,800
+subtract the journey, and give her a time,
+
+45
+00:01:39,800 --> 00:01:41,020
+start packing,
+
+46
+00:01:41,020 --> 00:01:42,620
+leave by this time.
+
+47
+00:01:42,720 --> 00:01:44,460
+When it's time to call the maternity unit,
+
+48
+00:01:44,460 --> 00:01:46,480
+she doesn't have to think.
+
+49
+00:01:46,540 --> 00:01:48,260
+She taps Call midwife,
+
+50
+00:01:48,260 --> 00:01:50,660
+and the sealed AI writes exactly what to say
+
+51
+00:01:50,660 --> 00:01:52,220
+from her timer.
+
+52
+00:01:52,220 --> 00:01:53,880
+Every number is checked against the timer
+
+53
+00:01:53,880 --> 00:01:55,400
+before she sees it.
+
+54
+00:01:55,400 --> 00:01:56,640
+And if something feels wrong,
+
+55
+00:01:56,640 --> 00:01:58,020
+like bleeding,
+
+56
+00:01:58,040 --> 00:01:59,800
+or the baby moving less,
+
+57
+00:01:59,820 --> 00:02:01,620
+the count doesn't matter anymore.
+
+58
+00:02:01,720 --> 00:02:03,580
+Lullwatch says go now.
+
+59
+00:02:03,740 --> 00:02:04,460
+Rules decide.
+
+60
+00:02:04,460 --> 00:02:06,920
+The AI only explains.
+
+61
+00:02:07,320 --> 00:02:08,900
+She can ask it anything.
+
+62
+00:02:08,940 --> 00:02:11,320
+Her question is encrypted on her phone to a
+
+63
+00:02:11,320 --> 00:02:13,800
+key only the sealed hardware holds.
+
+64
+00:02:13,880 --> 00:02:15,840
+Then her phone checks for itself,
+
+65
+00:02:15,840 --> 00:02:17,800
+NVIDIA confirms the GPUs,
+
+66
+00:02:18,440 --> 00:02:20,900
+Intel confirms the enclave is up to date,
+
+67
+00:02:20,900 --> 00:02:23,420
+and every reply is signed inside it.
+
+68
+00:02:23,660 --> 00:02:25,500
+Nobody can read her labour,
+
+69
+00:02:25,500 --> 00:02:26,680
+not even us.
+
+70
+00:02:26,840 --> 00:02:29,000
+That's what NEAR AI Cloud makes possible.
+
+71
+00:02:29,280 --> 00:02:31,080
+Private AI you can verify,
+
+72
+00:02:31,160 --> 00:02:32,460
+not just trust.
+
+73
+00:02:32,940 --> 00:02:35,060
+We built the app we wished we'd had.
+
+74
+00:02:35,080 --> 00:02:37,300
+Lullwatch is free, open source,
+
+75
+00:02:37,300 --> 00:02:38,500
+and works offline.
+
+76
+00:02:38,920 --> 00:02:40,260
+Know when to go.

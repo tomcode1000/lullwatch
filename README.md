@@ -4,6 +4,17 @@
 
 Built at the NEAR HACKATHON (1–14 Nov 2026), track **03 Privacy & Private AI**.
 
+<table>
+  <tr>
+    <td align="center" width="25%"><img src="docs/timer.png" alt="Timer: Start packing, leave for St Mary's by a set time" /><br /><b>Know when to go</b><br /><sub>Fixed rules forecast the leave-by time, counting the journey</sub></td>
+    <td align="center" width="25%"><img src="docs/call.png" alt="What to say when you call: a script written and verified in the TEE" /><br /><b>Know what to say</b><br /><sub>The call script, written in the TEE, signed and number-checked</sub></td>
+    <td align="center" width="25%"><img src="docs/gonow.png" alt="Go now: a warning sign overrides the count" /><br /><b>Warning signs first</b><br /><sub>Any red flag turns the screen to "Go now"</sub></td>
+    <td align="center" width="25%"><img src="docs/proof.png" alt="Privacy proof: sealed hardware verified with Intel and NVIDIA" /><br /><b>Private by proof</b><br /><sub>Her browser checks Intel and NVIDIA, and every reply's signature</sub></td>
+  </tr>
+</table>
+
+<img src="docs/landing.jpg" alt="Lullwatch landing page: Know when to go" />
+
 **Live:** [lullwatch.54-255-109-186.sslip.io](https://lullwatch.54-255-109-186.sslip.io) (landing page)
 
 To try it:
